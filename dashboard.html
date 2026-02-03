@@ -8,35 +8,45 @@
 </head>
 <body>
   <div class="container">
+
     <div class="header">
-      <a class="brand" href="./index.html">← 戻る</a>
-      <div class="badge">dashboard</div>
-    </div>
-    
-    <div class="topNav">
-      <a class="navBtn" href="./report.html">応募口数を報告する</a>
+      <a class="brand" href="./index.html">ホームへ</a>
+      <div class="badge">集計結果</div>
     </div>
 
+    <div class="topNav">
+      <a class="navBtn pink" href="./report.html">応募口数を報告する</a>
+    </div>
 
     <div class="card">
-      <h2>集計結果表</h2>
-      <div class="p small">色が濃いほど相対的に応募数が多い。★は落選報告のあった枠。</div>
+      <h2>応募総数</h2>
+      <div class="p small">色が濃いほど応募総数が多い．★は落選報告のあった枠</div>
       <div class="tablewrap" id="mapWrap"></div>
 
       <div class="hr"></div>
 
-      <h2>落選報告のあった枠</h2>
-      <div class="p small">日付と報告件数を表示しています。</div>
+      <h2>落選報告があった枠はこちら</h2>
+      <div class="p small">○月○日 第○部：○件 の形式で表示します。</div>
       <div id="rejList" class="p"></div>
 
       <div class="hr"></div>
 
-      <h2>応募総数（数値）の確認</h2>
-      <div class="p small">オープンチャットで配布されたコードを入力してください。</div>
+      <h2>応募総数の確認（数値）</h2>
+      <div class="p small">具体的な数値の公開の表示コードはオープンチャット「まりのまにあのおうち」参加者にのみ配布しています。</div>
+
       <div class="row">
-        <input id="pin" class="input" style="max-width:220px" placeholder="PIN" inputmode="numeric"/>
+        <input
+          id="pin"
+          class="input"
+          style="max-width:220px"
+          placeholder="コード（4桁）"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          type="password"
+        />
         <button id="unlock" class="btn primary">表示する</button>
       </div>
+
       <div id="totalsWrap" style="margin-top:10px;"></div>
 
       <div class="p small" id="updated" style="margin-top:10px;"></div>
