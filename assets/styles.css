@@ -1,1 +1,170 @@
+:root{
+  --green:#b7e4d7;  /* パールグリーン寄り */
+  --pink:#f8b4c4;   /* さくらピンク寄り */
+  --ink:#1f2937;
+  --muted:#6b7280;
+  --card:#ffffff;
+  --bg:#f7faf9;
+  --border:#e5e7eb;
+
+  --b0:#f3f4f6;
+  --b1:#d7f3ea;
+  --b2:#b7e4d7;
+  --b3:#f8c6d2;
+  --b4:#f8b4c4;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  color:var(--ink);
+  background:linear-gradient(180deg, #fff, var(--bg));
+}
+a{color:inherit; text-decoration:none;}
+.container{max-width:980px; margin:0 auto; padding:16px;}
+.header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:12px 0;
+}
+.brand{
+  font-weight:800; letter-spacing:.02em;
+}
+.badge{
+  font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:999px;
+  color:var(--muted); background:#fff;
+}
+.grid2{display:grid; grid-template-columns:1fr; gap:12px;}
+@media(min-width:720px){ .grid2{grid-template-columns:1fr 1fr;} }
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.04);
+}
+.card h2{margin:0 0 8px 0; font-size:16px;}
+.p{margin:6px 0; color:var(--muted); line-height:1.6;}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:8px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:#fff;
+  cursor:pointer;
+  font-weight:700;
+}
+.btn.primary{
+  border-color:transparent;
+  background: linear-gradient(90deg, var(--green), var(--pink));
+}
+.btn:disabled{opacity:.6; cursor:not-allowed;}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+
+.step{
+  display:flex; gap:10px; align-items:flex-start;
+  padding:10px 12px; border:1px solid var(--border); border-radius:14px;
+  background:#fff;
+}
+.step .n{
+  width:28px; height:28px; border-radius:999px;
+  background:linear-gradient(90deg, var(--green), var(--pink));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+}
+
+.select, .input{
+  width:100%;
+  padding:12px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#fff;
+  font-size:16px;
+}
+
+.small{font-size:12px; color:var(--muted);}
+
+.tablewrap{overflow:auto;}
+.heatmap{
+  border-collapse:separate; border-spacing:8px;
+  width:100%;
+}
+.heatmap th{
+  font-size:12px; color:var(--muted); font-weight:700;
+  text-align:center;
+}
+.cell{
+  min-width:42px;
+  height:42px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.04);
+  position:relative;
+}
+.cell .tag{
+  position:absolute; bottom:6px; right:8px;
+  font-size:10px; color:rgba(31,41,55,.65); font-weight:800;
+}
+.b0{background:var(--b0);}
+.b1{background:var(--b1);}
+.b2{background:var(--b2);}
+.b3{background:var(--b3);}
+.b4{background:var(--b4);}
+.rejDot{
+  position:absolute; top:7px; left:8px;
+  width:10px; height:10px; border-radius:99px;
+  background:#111827;
+  box-shadow:0 0 0 3px rgba(255,255,255,.65);
+}
+
+.hr{height:1px; background:var(--border); margin:12px 0;}
+.notice{
+  border-left:4px solid var(--pink);
+  padding:10px 12px;
+  background: rgba(248,180,196,.15);
+  border-radius:12px;
+  color:#374151;
+}
+.success{
+  border-left:4px solid var(--green);
+  padding:10px 12px;
+  background: rgba(183,228,215,.2);
+  border-radius:12px;
+}
+.error{
+  border-left:4px solid #ef4444;
+  padding:10px 12px;
+  background: rgba(239,68,68,.08);
+  border-radius:12px;
+}
+
+.slotGrid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+@media(min-width:720px){
+  .slotGrid{grid-template-columns:repeat(2, 1fr);}
+}
+.slotCard{
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px;
+  background:#fff;
+}
+.slotHead{
+  display:flex; justify-content:space-between; align-items:center;
+  gap:10px;
+}
+.slotTitle{font-weight:900;}
+.inline{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.check{
+  display:flex; gap:8px; align-items:center;
+  font-weight:700; font-size:13px;
+}
+.check input{transform:scale(1.2);}
+.mono{font-family: ui-monospace, SFMono-Regular, Menlo, monospace;}
 
