@@ -13,8 +13,36 @@ function setMsg(type, text){
   msg.innerHTML = `<div class="${type}">${text}</div>`;
 }
 
+/**
+ * intensity(0〜100) → 背景色（緑ベース）
+ * - 0: 白
+ * - >0: 最大値に対する相対濃淡（GAS側で0〜100に正規化済み）
+ */
+function heatStyleFromIntensity(p){
+  const v = Number(p);
+  if (!Number.isFinite(v) || v <= 0) {
+    return "background:#ffffff;";
+  }
+
+  // 0〜100 → 見える範囲のalphaへ（薄すぎ問題を防ぐ）
+  // 例：1でもうっすら分かり、100でしっかり濃い
+  const alpha = 0.12 + (v / 100) * 0.82; // 0.12〜0.94
+
+  // パールグリーン寄り（好みで微調整OK）
+  // ※色は緑ベースで、濃淡はalphaで表現
+  const r = 90, g = 170, b = 140;
+
+  return `background: rgba(${r}, ${g}, ${b}, ${alpha});`;
+}
+
 function renderHeatmap(summary){
-  const { dates, slots, buckets, rejection } = summary;
+  // intensity方式に対応：bucketsは使わない
+  const { dates, slots, intensity, rejection } = summary;
+
+  // 互換：まだbucketsしか返ってこない場合はエラーにする（気づきやすくする）
+  if (!Array.isArray(intensity)) {
+    throw new Error("summary.intensity が見つかりません（GASのGETを intensity 返却に変更してください）");
+  }
 
   let html = `<table class="heatmap"><thead><tr><th></th>`;
   for (const s of slots) html += `<th>第${s}部</th>`;
@@ -23,13 +51,15 @@ function renderHeatmap(summary){
   for (let i=0;i<dates.length;i++){
     html += `<tr><th style="text-align:left; padding-right:6px;">${formatJPDate(dates[i])}</th>`;
     for (let j=0;j<slots.length;j++){
-      const b = buckets[i][j];
+      const p = intensity[i][j];          // 0〜100
       const hasRej = !!rejection[i][j];
+      const style = heatStyleFromIntensity(p);
+
       html += `
         <td>
-          <div class="cell b${b}">
+          <div class="cell" style="${style}">
             ${hasRej ? `<div class="rejDot" title="落選報告あり"></div>` : ``}
-            <div class="tag">${b===0 ? "" : ""}</div>
+            <div class="tag">${p && p > 0 ? "" : ""}</div>
           </div>
         </td>
       `;
@@ -65,7 +95,7 @@ function renderTotalsTable(totals){
       const hasRej = !!rejection[i][j];
       html += `
         <td>
-          <div class="cell b0" style="display:flex; align-items:center; justify-content:center; font-weight:900;">
+          <div class="cell" style="display:flex; align-items:center; justify-content:center; font-weight:900; background:#fff;">
             ${hasRej ? `<span style="margin-right:6px;">●</span>` : ``}
             <span>${v}</span>
           </div>
