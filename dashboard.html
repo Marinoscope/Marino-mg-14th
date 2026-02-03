@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>集計</title>
+  <title>集計（濃淡）</title>
   <style>
     :root{
       --bg:#EAF6F2; --text:#1C2B2A; --muted:#4A6663;
@@ -13,7 +13,9 @@
     }
     *{ box-sizing:border-box; }
     body{
-      margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--text);
+      margin:0;
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+      color:var(--text);
       background:
         radial-gradient(1200px 600px at 20% -10%, rgba(246,183,198,.35), transparent 60%),
         radial-gradient(1200px 700px at 90% 10%, rgba(47,125,115,.18), transparent 60%),
@@ -35,14 +37,34 @@
     .hint{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.6; }
 
     .grid{ overflow:auto; border-radius:16px; margin-top:10px; }
-    table{ border-collapse:collapse; min-width:860px; width:100%; background:rgba(255,255,255,.96); }
+    table{
+      border-collapse:collapse;
+      min-width:860px; /* スマホは横スクロール前提 */
+      width:100%;
+      background:rgba(255,255,255,.96);
+    }
     th,td{ border:1px solid rgba(0,0,0,.06); padding:10px; text-align:center; }
-    th{ position:sticky; top:0; z-index:1; background:rgba(207,233,226,.55); }
-    td:first-child{ position:sticky; left:0; z-index:1; background:rgba(246,183,198,.20); text-align:left; font-weight:900; }
+    th{
+      position:sticky; top:0; z-index:2;
+      background:rgba(207,233,226,.55);
+      font-weight:900;
+    }
+    td:first-child{
+      position:sticky; left:0; z-index:1;
+      background:rgba(246,183,198,.20);
+      text-align:left;
+      font-weight:900;
+      white-space:nowrap;
+    }
 
-    .cell{ height:34px; border-radius:10px; border:1px solid rgba(0,0,0,.08); }
+    .cell{
+      height:34px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,.08);
+    }
 
     ul{ margin:8px 0 0 18px; }
+    .small{ font-size:12px; color:var(--muted); margin-top:6px; }
   </style>
 </head>
 <body>
@@ -56,6 +78,7 @@
       <div id="status" class="status">読み込み中…</div>
       <div class="hint">濃いほど相対的に応募が多い枠です（具体的な数値は表示しません）。</div>
       <div class="grid" id="grid"></div>
+      <div id="updated" class="small"></div>
     </div>
 
     <div class="card">
@@ -66,13 +89,16 @@
   </div>
 
   <script>
+    // ★これだけが唯一のGAS URL（クエリは使わない）
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
 
+    // 0..1 をグレー濃淡に変換（数値は出さない）
     function shadeColor(v){
       const x = Math.max(0, Math.min(1, Number(v) || 0));
       const shade = Math.round(255 - (x * 180)); // 255..75
       return `rgb(${shade},${shade},${shade})`;
     }
+
     function formatDateJP(iso){
       const [y,m,d] = String(iso).split("-").map(Number);
       if (!y || !m || !d) return String(iso);
@@ -84,6 +110,8 @@
       grid.innerHTML = "";
 
       const table = document.createElement("table");
+
+      // head
       const thead = document.createElement("thead");
       const trh = document.createElement("tr");
 
@@ -99,9 +127,11 @@
       thead.appendChild(trh);
       table.appendChild(thead);
 
+      // body
       const tbody = document.createElement("tbody");
       for (let r=0; r<dates.length; r++){
         const tr = document.createElement("tr");
+
         const tdD = document.createElement("td");
         tdD.textContent = formatDateJP(dates[r]);
         tr.appendChild(tdD);
@@ -118,6 +148,7 @@
         tbody.appendChild(tr);
       }
       table.appendChild(tbody);
+
       grid.appendChild(table);
     }
 
@@ -139,17 +170,22 @@
 
     async function main(){
       const status = document.getElementById("status");
+      const updated = document.getElementById("updated");
+
       try{
-        const res = await fetch(`${GAS_URL}?action=summary`, { cache:"no-store" });
+        // ★GETはクエリ無しで /exec のみ
+        const res = await fetch(GAS_URL, { cache:"no-store" });
         const data = await res.json();
 
         if (!data || data.ok !== true){
-          status.textContent = "読み込み失敗（summaryがok:trueを返していません）";
+          status.textContent = "読み込み失敗（GASが ok:true を返していません）";
           status.classList.add("danger");
+          updated.textContent = data && data.error ? `エラー: ${data.error}` : "";
           return;
         }
+
         if (!Array.isArray(data.dates) || !Array.isArray(data.intensity)){
-          status.textContent = "読み込み失敗（summaryの形式が想定と違います）";
+          status.textContent = "読み込み失敗（データ形式が想定と違います）";
           status.classList.add("danger");
           return;
         }
@@ -157,11 +193,18 @@
         status.textContent = "表示中";
         renderTable(data.dates, data.intensity);
         renderRej(data.rejectionByDate || []);
+        if (data.updatedAt) {
+          updated.textContent = `更新: ${new Date(data.updatedAt).toLocaleString("ja-JP")}`;
+        } else {
+          updated.textContent = "";
+        }
+
       }catch(e){
         status.textContent = "読み込み失敗（通信エラー）";
         status.classList.add("danger");
       }
     }
+
     main();
   </script>
 </body>
