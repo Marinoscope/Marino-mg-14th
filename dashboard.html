@@ -3,34 +3,143 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-  <!--
-    【このページの役割】
-    - GAS の GET ?action=summary を呼び出して集計結果を取得する
-    - 具体的な応募数は表示しない（濃淡のみ）
-    - 落選報告は「日付ごとに○件あり」を表の外に表示する
-  -->
   <title>集計を確認する</title>
 
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 18px; }
-    .wrap { max-width: 980px; margin: 0 auto; }
-    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    h1 { font-size: 18px; margin: 10px 0 12px; }
-    .hint { font-size: 12px; color:#666; line-height:1.5; }
-    .card { border:1px solid #ddd; border-radius:12px; padding:14px; margin-top: 12px; }
-    .grid { overflow:auto; }
-    table { border-collapse: collapse; min-width: 840px; }
-    th, td { border:1px solid #ddd; padding: 10px; text-align:center; }
-    th { background:#f6f6f6; position: sticky; top: 0; z-index: 1; }
-    td:first-child { background:#fafafa; position: sticky; left:0; z-index: 1; text-align:left; }
-    .legend { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
-    .box { width:18px; height:18px; border:1px solid #ccc; border-radius:4px; }
-    .meta { font-size:12px; color:#666; margin-top:8px; }
-    ul { margin: 8px 0 0 18px; }
-    .warn { font-weight: 800; }
+    :root{
+      --bg:#EAF6F2;
+      --card:#FFFFFF;
+      --text:#1C2B2A;
+      --muted:#4A6663;
+
+      --pink:#F6B7C6;
+      --green:#2F7D73;
+      --green-soft:#CFE9E2;
+
+      --border:#D7E7E2;
+      --shadow: 0 10px 28px rgba(24, 74, 67, .10);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(246,183,198,.35), transparent 60%),
+        radial-gradient(1200px 700px at 90% 10%, rgba(47,125,115,.18), transparent 60%),
+        var(--bg);
+    }
+
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 16px 12px 28px; }
+    .top{
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      margin: 6px 2px 10px;
+      font-size: 13px;
+    }
+    a{ color:#133B37; text-decoration:none; font-weight:700; }
+    a:hover{ text-decoration:underline; }
+
+    .title{
+      display:flex; align-items:center; gap:10px;
+      margin: 6px 2px 8px;
+    }
+    .logo{
+      width: 40px; height: 40px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(246,183,198,.95), rgba(47,125,115,.35));
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.6);
+    }
+    h1{ font-size: 18px; margin: 0; }
+    .sub{ margin: 4px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+
+    .card{
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-top: 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .hint{ font-size:12px; color: var(--muted); line-height:1.6; margin-top: 6px; }
+
+    /* レジェンド */
+    .legend{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top: 10px; }
+    .pill{
+      display:flex; align-items:center; gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(47,125,115,.18);
+      background: rgba(207,233,226,.35);
+      font-size: 12px;
+      font-weight: 900;
+      color:#153F3A;
+    }
+    .box{ width:16px; height:16px; border-radius:6px; border:1px solid rgba(0,0,0,.10); }
+
+    .meta{ margin-top: 10px; font-size: 12px; color: var(--muted); font-weight: 800; }
+
+    /* スマホ：日程カード表示 */
+    .mobileOnly{ display:block; }
+    .desktopOnly{ display:none; }
+
+    @media (min-width: 900px){
+      .wrap{ padding: 22px 16px 34px; }
+      h1{ font-size: 22px; }
+      .sub{ font-size: 13.5px; }
+      .mobileOnly{ display:none; }
+      .desktopOnly{ display:block; }
+    }
+
+    .dateCard{
+      border:1px solid rgba(0,0,0,.06);
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 10px;
+      background: rgba(255,255,255,.96);
+    }
+    .dateHead{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      font-weight: 900;
+      color:#163E3A;
+      margin-bottom: 10px;
+    }
+    .slots{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    .slotCell{
+      height: 22px;
+      border-radius: 10px;
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .slotLabels{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+      color:#2B4C48;
+      font-size: 11px;
+      font-weight: 900;
+      text-align:center;
+    }
+
+    /* PC：表 */
+    .grid{ overflow:auto; margin-top: 10px; border-radius: 16px; }
+    table{ border-collapse:collapse; min-width: 860px; background: rgba(255,255,255,.96); }
+    th, td{ border:1px solid rgba(0,0,0,.06); padding: 10px; text-align:center; }
+    th{ background: rgba(207,233,226,.55); color:#0F3B35; position: sticky; top:0; z-index: 1; }
+    td:first-child{ background: rgba(246,183,198,.20); text-align:left; font-weight: 900; position: sticky; left:0; z-index: 1; }
+
+    .warnTitle{ font-weight: 900; color:#5A2A37; }
+    ul{ margin: 8px 0 0 18px; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="top">
@@ -38,26 +147,30 @@
       <a href="./report.html">報告する →</a>
     </div>
 
-    <h1>合算の集計（濃淡のみ）</h1>
-
-    <div class="hint">
-      応募枚数の<strong>具体的な数値は公開しません</strong>。濃いほど相対的に応募が多い枠です。<br/>
-      落選は「その日程で落選報告があったか」を表の外にサマリー表示します。
+    <div class="title">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>合算の集計（濃淡のみ）</h1>
+        <div class="sub">
+          具体的な応募数は公開しません。濃いほど相対的に応募が多い枠です。<br/>
+          落選は「その日程で落選報告があったか」を表の外にサマリー表示します。
+        </div>
+      </div>
     </div>
 
     <div class="card">
-      <!-- ここにヒートマップの表を描画 -->
-      <div class="grid" id="grid"></div>
+      <div id="mobile" class="mobileOnly"></div>
 
-      <!-- 右下に「薄い〜濃い」の凡例 -->
+      <div id="desktop" class="desktopOnly">
+        <div class="grid" id="grid"></div>
+      </div>
+
       <div class="legend" id="legend"></div>
-
-      <!-- 集計生成時刻（GAS側） -->
       <div class="meta" id="meta"></div>
     </div>
 
     <div class="card">
-      <div class="warn">落選サマリー（完売の可能性が高い日程）</div>
+      <div class="warnTitle">落選サマリー（完売の可能性が高い日程）</div>
       <div class="hint">
         ※「一部落選を含む落選あり」チェックの報告件数です（部の内訳・具体数は出しません）。
       </div>
@@ -67,38 +180,99 @@
 
   <script>
     /******************************************************************
-     * 【設定ここだけ変える】
-     * - GAS_URL：Apps Script の WebアプリURL（.../exec）
+     * 【設定値：埋め込み済み】
      ******************************************************************/
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
 
-    // 列見出し（第1部〜第6部）
     const SLOT_LABELS = ["第1部","第2部","第3部","第4部","第5部","第6部"];
 
     /******************************************************************
-     * メイン処理：GASから summary を取得して描画
+     * メイン：GASから summary を取得して描画
      ******************************************************************/
-    async function main() {
-      // cache:no-store で更新されやすくする（状況により効きが変わります）
+    async function main(){
       const res = await fetch(`${GAS_URL}?action=summary`, { cache: "no-store" });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
-      if (!data.ok) {
+      if (!data || !data.ok) {
+        document.getElementById("mobile").textContent = "読み込みに失敗しました。";
         document.getElementById("grid").textContent = "読み込みに失敗しました。";
         return;
       }
 
-      renderHeatmap(data);
+      renderMobile(data);
+      renderDesktop(data);
+      renderLegend();
       renderRejectionSummary(data);
       renderMeta(data);
     }
 
     /******************************************************************
-     * ヒートマップ（濃淡）の表を描画
-     * - data.intensity は 0..1 の値
-     * - 具体的な応募数は表示しない
+     * 濃淡の色（0..1 → グレースケール）
+     * - ここは好みで「緑寄り」にもできるけど、まずは見やすい無彩色で
      ******************************************************************/
-    function renderHeatmap(data) {
+    function shadeColor(v){
+      const x = Math.max(0, Math.min(1, v || 0));
+      const shade = Math.round(255 - (x * 180)); // 255..75
+      return `rgb(${shade},${shade},${shade})`;
+    }
+
+    function formatDateJP(iso){
+      const [y,m,d] = String(iso).split("-").map(Number);
+      if (!y || !m || !d) return String(iso);
+      return `${m}月${d}日`;
+    }
+
+    /******************************************************************
+     * スマホ：日程カード（6部の濃淡バー）
+     ******************************************************************/
+    function renderMobile(data){
+      const root = document.getElementById("mobile");
+      root.innerHTML = "";
+
+      const dates = data.dates || [];
+      const intensity = data.intensity || [];
+
+      for (let r=0; r<dates.length; r++){
+        const card = document.createElement("div");
+        card.className = "dateCard";
+
+        const head = document.createElement("div");
+        head.className = "dateHead";
+        head.textContent = formatDateJP(dates[r]);
+
+        const slots = document.createElement("div");
+        slots.className = "slots";
+
+        for (let c=0; c<6; c++){
+          const v = (intensity[r] && typeof intensity[r][c] === "number") ? intensity[r][c] : 0;
+          const cell = document.createElement("div");
+          cell.className = "slotCell";
+          cell.style.backgroundColor = shadeColor(v);
+          slots.appendChild(cell);
+        }
+
+        const labels = document.createElement("div");
+        labels.className = "slotLabels";
+        for (let c=0; c<6; c++){
+          const t = document.createElement("div");
+          t.textContent = String(c+1);
+          labels.appendChild(t);
+        }
+
+        card.appendChild(head);
+        card.appendChild(slots);
+        card.appendChild(labels);
+        root.appendChild(card);
+      }
+    }
+
+    /******************************************************************
+     * PC：表（ヒートマップ）
+     ******************************************************************/
+    function renderDesktop(data){
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+
       const dates = data.dates || [];
       const intensity = data.intensity || [];
 
@@ -110,7 +284,7 @@
       th0.textContent = "日程";
       trh.appendChild(th0);
 
-      for (const s of SLOT_LABELS) {
+      for (const s of SLOT_LABELS){
         const th = document.createElement("th");
         th.textContent = s;
         trh.appendChild(th);
@@ -121,23 +295,17 @@
 
       const tbody = document.createElement("tbody");
 
-      for (let r = 0; r < dates.length; r++) {
+      for (let r=0; r<dates.length; r++){
         const tr = document.createElement("tr");
 
         const tdDate = document.createElement("td");
         tdDate.textContent = formatDateJP(dates[r]);
         tr.appendChild(tdDate);
 
-        // 6部ぶん描画
-        for (let c = 0; c < 6; c++) {
-          const td = document.createElement("td");
+        for (let c=0; c<6; c++){
           const v = (intensity[r] && typeof intensity[r][c] === "number") ? intensity[r][c] : 0;
-
-          // グレースケール：薄い=白、濃い=暗い
-          // （色は好みで後から変えてOK）
-          const shade = Math.round(255 - (v * 180)); // 255..75くらい
-          td.style.backgroundColor = `rgb(${shade},${shade},${shade})`;
-
+          const td = document.createElement("td");
+          td.style.backgroundColor = shadeColor(v);
           tr.appendChild(td);
         }
 
@@ -145,12 +313,13 @@
       }
 
       table.appendChild(tbody);
-
-      const grid = document.getElementById("grid");
-      grid.innerHTML = "";
       grid.appendChild(table);
+    }
 
-      // 凡例を作る
+    /******************************************************************
+     * 凡例
+     ******************************************************************/
+    function renderLegend(){
       const legend = document.getElementById("legend");
       legend.innerHTML = "";
 
@@ -160,38 +329,28 @@
         { label: "濃い（相対的に多い）", v: 1.0 },
       ];
 
-      for (const it of items) {
-        const wrap = document.createElement("div");
-        wrap.style.display = "flex";
-        wrap.style.alignItems = "center";
-        wrap.style.gap = "8px";
-
+      for (const it of items){
+        const pill = document.createElement("div");
+        pill.className = "pill";
         const box = document.createElement("div");
         box.className = "box";
-        const shade = Math.round(255 - (it.v * 180));
-        box.style.backgroundColor = `rgb(${shade},${shade},${shade})`;
-
+        box.style.backgroundColor = shadeColor(it.v);
         const text = document.createElement("div");
-        text.style.fontSize = "12px";
-        text.style.color = "#444";
         text.textContent = it.label;
-
-        wrap.appendChild(box);
-        wrap.appendChild(text);
-        legend.appendChild(wrap);
+        pill.appendChild(box);
+        pill.appendChild(text);
+        legend.appendChild(pill);
       }
     }
 
     /******************************************************************
-     * 落選サマリーを表示
-     * - data.rejectionByDate は [{date:"YYYY-MM-DD", reports:数字}, ...]
-     * - 「表の外」に日付ごとに表示する（あなたの要望）
+     * 落選サマリー（表の外に表示）
      ******************************************************************/
-    function renderRejectionSummary(data) {
+    function renderRejectionSummary(data){
       const list = data.rejectionByDate || [];
       const rej = document.getElementById("rej");
 
-      if (!list.length) {
+      if (!list.length){
         rej.textContent = "現在、落選報告はありません。";
         return;
       }
@@ -199,7 +358,7 @@
       const sorted = [...list].sort((a,b) => String(a.date).localeCompare(String(b.date)));
 
       const ul = document.createElement("ul");
-      for (const item of sorted) {
+      for (const item of sorted){
         const li = document.createElement("li");
         li.textContent = `${formatDateJP(item.date)}：落選報告 ${item.reports}件あり`;
         ul.appendChild(li);
@@ -209,24 +368,11 @@
       rej.appendChild(ul);
     }
 
-    /******************************************************************
-     * 最終更新時刻（GASが集計を生成した時刻）を表示
-     ******************************************************************/
-    function renderMeta(data) {
+    function renderMeta(data){
       const meta = document.getElementById("meta");
       meta.textContent = `最終更新（集計生成時刻）：${new Date(data.updatedAt).toLocaleString("ja-JP")}`;
     }
 
-    /******************************************************************
-     * "YYYY-MM-DD" → "M月D日" に変換
-     ******************************************************************/
-    function formatDateJP(iso) {
-      const [y,m,d] = String(iso).split("-").map(Number);
-      if (!y || !m || !d) return String(iso);
-      return `${m}月${d}日`;
-    }
-
-    // ページ読み込み時に実行
     main();
   </script>
 </body>
