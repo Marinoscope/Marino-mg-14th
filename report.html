@@ -1,1 +1,471 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!--
+    【このページの役割】
+    - 何次応募か（1〜15次）を選ぶ
+    - 6日程 × 6部 = 36枠の応募枚数を入力する
+    - 「落選あり」も枠ごとにチェックできる
+    - 送信ボタンで GAS に POST する（Turnstile token も一緒に送る）
+  -->
+  <title>応募枚数を報告する</title>
+
+  <!--
+    【Turnstileの読み込み】
+    - Cloudflare Turnstile のスクリプト
+    - HTML側は "Site Key" を使う（Secret Keyは絶対入れない）
+  -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 18px; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    a { color: #111; }
+    h1 { font-size: 18px; margin: 8px 0 10px; }
+    .step { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin-top: 12px; }
+    label { font-weight: 700; display:block; margin-bottom: 8px; }
+    select { width: 100%; padding: 10px; border-radius: 10px; border:1px solid #bbb; }
+    .grid { overflow:auto; margin-top: 10px; }
+    table { border-collapse: collapse; min-width: 840px; }
+    th, td { border:1px solid #ddd; padding: 8px; text-align:center; }
+    th { background:#f6f6f6; position: sticky; top: 0; z-index: 1; }
+    td:first-child { background:#fafafa; position: sticky; left: 0; z-index: 1; text-align:left; }
+    .cell { display:flex; flex-direction:column; gap:6px; align-items:center; }
+    input[type="number"] { width: 84px; padding: 8px; border-radius: 10px; border:1px solid #bbb; }
+    .chk { display:flex; gap:6px; align-items:center; font-size: 12px; color:#333; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; align-items:center; }
+    button {
+      padding: 10px 12px; border-radius: 10px; border:1px solid #111;
+      background:#111; color:#fff; font-weight:700; cursor:pointer;
+    }
+    button.secondary { background:#fff; color:#111; border-color:#bbb; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    .msg { margin-top: 10px; font-size: 13px; color:#333; white-space:pre-wrap; }
+    .hint { font-size: 12px; color:#666; line-height:1.5; margin-top: 8px; }
+    .sum { font-weight: 800; }
+    .danger { color:#b00020; font-weight:700; }
+    .ok { color:#0b6; font-weight:700; }
+    .turnstile-box { margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <a href="./index.html">← 戻る</a>
+      <a href="./dashboard.html">集計を見る →</a>
+    </div>
+
+    <h1>応募枚数を報告する（匿名）</h1>
+
+    <!--
+      【ステップ1】
+      - まず「何次応募の報告か」を選ぶ
+      - ここで選んだ round を GAS に送る（保存用）
+      - 表示は合算だけだけど、裏で「何次」別の分析ができるように記録する
+    -->
+    <div class="step" id="step1">
+      <label for="round">何次応募の枚数の報告ですか？</label>
+      <select id="round"></select>
+
+      <div class="hint">
+        「何次」は裏で保存します（将来の分析用）。公開表示は<strong>合算のみ</strong>です。
+      </div>
+
+      <div class="row">
+        <button id="go" class="secondary">次へ（入力表を表示）</button>
+      </div>
+    </div>
+
+    <!--
+      【ステップ2】
+      - 36枠入力表を表示し、送信できるようにする
+      - 下書き保存（localStorage）で途中離脱に強くする
+      - Turnstile の token を取得して送信時に添付する
+    -->
+    <div class="step" id="step2" style="display:none;">
+      <div class="hint">
+        <strong>落選あり</strong>：一部落選を含め、応募した枚数より当選枚数が少なかった場合にチェック。<br/>
+        応募していない枠はチェック不要。未入力セルは送信時に0扱い。
+      </div>
+
+      <div class="row">
+        <!-- 全セルを0にするボタン（入力が面倒な人向けの小技） -->
+        <button id="fill0" class="secondary">全部0で埋める</button>
+
+        <!-- 下書き関係（端末内だけに保存。匿名性は保たれる） -->
+        <button id="restore" class="secondary">下書きを復元</button>
+        <button id="clearDraft" class="secondary">下書きを消す</button>
+
+        <!-- 今回合計（参考表示。送信内容を確認しやすい） -->
+        <div class="sum">今回の合計：<span id="total">0</span></div>
+      </div>
+
+      <!-- 36枠テーブルをここに描画する -->
+      <div class="grid" id="grid"></div>
+
+      <!-- Turnstile（ほぼ何もしなくてOKなCAPTCHA） -->
+      <div class="turnstile-box">
+        <div id="ts" class="cf-turnstile"></div>
+        <div class="hint">送信時に自動判定されます（ほぼ操作不要）。</div>
+      </div>
+
+      <div class="row">
+        <button id="submit">送信</button>
+        <button id="saveDraft" class="secondary">下書きを保存</button>
+      </div>
+
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    /******************************************************************
+     * 【設定ここだけ変える】
+     * - GAS_URL：Apps Script の WebアプリURL（.../exec）
+     * - TURNSTILE_SITE_KEY：Cloudflare Turnstile の Site Key
+     ******************************************************************/
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
+    const TURNSTILE_SITE_KEY = "0x4AAAAAACXGSWcz_G9TQ_K4";
+
+    /******************************************************************
+     * 【日程固定】（あなたが指定した14thミーグリ日程）
+     * - 表示ラベルは見やすい日本語
+     * - 送信時は iso（YYYY-MM-DD）で送る
+     ******************************************************************/
+    const DATES = [
+      { iso:"2026-03-15", label:"3月15日(日)" },
+      { iso:"2026-03-29", label:"3月29日(日)" },
+      { iso:"2026-04-05", label:"4月5日(日)"  },
+      { iso:"2026-04-19", label:"4月19日(日)" },
+      { iso:"2026-05-30", label:"5月30日(土)" },
+      { iso:"2026-05-31", label:"5月31日(日)" },
+    ];
+
+    // 部は第1〜第6部固定
+    const SLOTS = [1,2,3,4,5,6];
+
+    // 何次応募は 1次〜15次を用意（後から増やすのも簡単）
+    const ROUND_MAX = 15;
+
+    /******************************************************************
+     * 【状態管理】
+     * - turnstileToken：CAPTCHAの判定トークン
+     * - currentRound：現在選択された「何次応募」
+     * - 下書き保存キー：この端末だけに保存（匿名でOK）
+     ******************************************************************/
+    const $ = (id) => document.getElementById(id);
+    let turnstileToken = "";
+    let currentRound = "";
+    const DRAFT_KEY = "mg14_draft_v1";
+
+    /******************************************************************
+     * 画面初期化：roundセレクトに 1次〜15次 を並べる
+     ******************************************************************/
+    const roundSel = $("round");
+    for (let i = 1; i <= ROUND_MAX; i++) {
+      const opt = document.createElement("option");
+      opt.value = `${i}次`;
+      opt.textContent = `${i}次`;
+      roundSel.appendChild(opt);
+    }
+
+    /******************************************************************
+     * ステップ1 → ステップ2へ
+     * - roundを確定
+     * - 36枠テーブルを描画
+     * - Turnstileを表示して token を取れる状態にする
+     ******************************************************************/
+    $("go").addEventListener("click", () => {
+      currentRound = roundSel.value;
+      $("step1").style.display = "none";
+      $("step2").style.display = "block";
+      renderGrid();
+      initTurnstile();
+      loadDraftIfAny(false); // 自動復元はしない（ユーザーが復元ボタンを押したときだけ）
+    });
+
+    /******************************************************************
+     * Turnstileの設定
+     * - data-sitekey に Site Key を入れる
+     * - callback で token が返ってくるので turnstileToken に保存する
+     ******************************************************************/
+    function initTurnstile() {
+      const ts = $("ts");
+      ts.innerHTML = ""; // 念のため初期化
+
+      ts.setAttribute("data-sitekey", TURNSTILE_SITE_KEY);
+      ts.setAttribute("data-callback", "onTurnstile");
+      ts.setAttribute("data-expired-callback", "onTurnstileExpired");
+
+      // Turnstileが成功すると token が渡される
+      window.onTurnstile = (token) => { turnstileToken = token; };
+
+      // token が期限切れになったら空に戻す
+      window.onTurnstileExpired = () => { turnstileToken = ""; };
+    }
+
+    /******************************************************************
+     * 36枠（6日×6部）テーブルを作る
+     * - 各セルに
+     *    - 応募枚数入力（number）
+     *    - 落選あり（checkbox）
+     ******************************************************************/
+    function renderGrid() {
+      const grid = $("grid");
+      grid.innerHTML = "";
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+
+      // 左上の見出し
+      const th0 = document.createElement("th");
+      th0.textContent = "日程 / 部";
+      trh.appendChild(th0);
+
+      // 第1部〜第6部
+      for (const s of SLOTS) {
+        const th = document.createElement("th");
+        th.textContent = `第${s}部`;
+        trh.appendChild(th);
+      }
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      // 行：日程
+      for (const d of DATES) {
+        const tr = document.createElement("tr");
+
+        // 左端：日程ラベル
+        const tdDate = document.createElement("td");
+        tdDate.textContent = d.label;
+        tr.appendChild(tdDate);
+
+        // 列：部
+        for (const s of SLOTS) {
+          const td = document.createElement("td");
+          const key = `${d.iso}#${s}`; // date+slot の一意キー
+
+          // 応募枚数入力
+          const num = document.createElement("input");
+          num.type = "number";
+          num.min = "0";
+          num.max = "999";
+          num.step = "1";
+          num.inputMode = "numeric";
+          num.placeholder = "0";
+          num.dataset.key = key;
+
+          // 入力が変わったら合計表示更新＆下書きを自動保存
+          num.addEventListener("input", () => {
+            updateTotal();
+            saveDraft(true); // true=黙って保存
+          });
+
+          // 落選ありチェック
+          const chk = document.createElement("input");
+          chk.type = "checkbox";
+          chk.dataset.key = key;
+          chk.addEventListener("change", () => saveDraft(true));
+
+          // 1セル内に縦並びで配置
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.appendChild(num);
+
+          const row = document.createElement("label");
+          row.className = "chk";
+          row.appendChild(chk);
+          const span = document.createElement("span");
+          span.textContent = "落選あり";
+          row.appendChild(span);
+
+          cell.appendChild(row);
+          td.appendChild(cell);
+          tr.appendChild(td);
+        }
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      grid.appendChild(table);
+
+      updateTotal();
+    }
+
+    /******************************************************************
+     * 入力欄・チェック欄をまとめて取得
+     ******************************************************************/
+    function getAllInputs() {
+      return Array.from(document.querySelectorAll('input[type="number"][data-key]'));
+    }
+    function getAllChecks() {
+      return Array.from(document.querySelectorAll('input[type="checkbox"][data-key]'));
+    }
+
+    /******************************************************************
+     * 画面上の「今回の合計」を更新
+     ******************************************************************/
+    function updateTotal() {
+      let sum = 0;
+      for (const inp of getAllInputs()) {
+        const v = Number(inp.value || 0);
+        if (Number.isFinite(v)) sum += v;
+      }
+      $("total").textContent = String(sum);
+    }
+
+    /******************************************************************
+     * ボタン：全部0で埋める
+     ******************************************************************/
+    $("fill0").addEventListener("click", () => {
+      for (const inp of getAllInputs()) inp.value = "0";
+      updateTotal();
+      saveDraft(false);
+    });
+
+    /******************************************************************
+     * 下書き保存・復元・削除
+     ******************************************************************/
+    $("saveDraft").addEventListener("click", () => {
+      saveDraft(false);
+      setMsg("下書きを保存しました。", "ok");
+    });
+
+    $("restore").addEventListener("click", () => loadDraftIfAny(true));
+
+    $("clearDraft").addEventListener("click", () => {
+      localStorage.removeItem(DRAFT_KEY);
+      setMsg("下書きを削除しました。", "ok");
+    });
+
+    // 下書きを localStorage に保存（端末内だけ）
+    function saveDraft(silent) {
+      const data = { round: currentRound, values: {}, rejected: {} };
+
+      for (const inp of getAllInputs()) {
+        data.values[inp.dataset.key] = inp.value ?? "";
+      }
+      for (const chk of getAllChecks()) {
+        data.rejected[chk.dataset.key] = chk.checked ? 1 : 0;
+      }
+
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      if (!silent) setMsg("下書きを保存しました。", "ok");
+    }
+
+    // 下書きを復元（apply=true のときだけ反映する）
+    function loadDraftIfAny(apply) {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) {
+        if (apply) setMsg("下書きが見つかりませんでした。", "danger");
+        return;
+      }
+
+      let data;
+      try { data = JSON.parse(raw); } catch { return; }
+
+      if (!apply) return;
+
+      if (data.round && data.round !== currentRound) {
+        setMsg(`下書きは「${data.round}」として保存されています。現在は「${currentRound}」です（復元は実行します）。`, "danger");
+      } else {
+        setMsg("下書きを復元しました。", "ok");
+      }
+
+      for (const inp of getAllInputs()) {
+        const v = (data.values && (inp.dataset.key in data.values)) ? data.values[inp.dataset.key] : "";
+        inp.value = v ?? "";
+      }
+      for (const chk of getAllChecks()) {
+        chk.checked = !!(data.rejected && data.rejected[chk.dataset.key]);
+      }
+
+      updateTotal();
+    }
+
+    // メッセージ表示（成功/失敗）
+    function setMsg(text, kind) {
+      const el = $("msg");
+      el.textContent = text;
+      el.className = "msg " + (kind === "ok" ? "ok" : (kind === "danger" ? "danger" : ""));
+    }
+
+    /******************************************************************
+     * 送信処理
+     * - Turnstile token がない場合は送信しない
+     * - 36枠すべてを entries に詰めて GAS に POST
+     ******************************************************************/
+    $("submit").addEventListener("click", async () => {
+      $("submit").disabled = true;
+
+      try {
+        // 応募次が未選択のまま送信されないようにする
+        if (!currentRound) {
+          setMsg("応募次が未選択です。", "danger");
+          return;
+        }
+
+        // Turnstile token が取れていない場合
+        if (!turnstileToken) {
+          setMsg("CAPTCHA確認がまだです。少し待ってから再度お試しください。", "danger");
+          return;
+        }
+
+        // 36枠のデータを作る（未入力は0）
+        const entries = [];
+        for (const d of DATES) {
+          for (const s of SLOTS) {
+            const key = `${d.iso}#${s}`;
+            const inp = document.querySelector(`input[type="number"][data-key="${key}"]`);
+            const chk = document.querySelector(`input[type="checkbox"][data-key="${key}"]`);
+
+            // 入力値は 0..999 に丸める（安全対策）
+            const countRaw = Number(inp?.value || 0) || 0;
+            const count = Math.max(0, Math.min(999, Math.floor(countRaw)));
+            const rejected = !!(chk?.checked);
+
+            entries.push({ date: d.iso, slot: s, count, rejected });
+          }
+        }
+
+        // GAS に送る payload（Turnstile token も含める）
+        const payload = { round: currentRound, entries, turnstileToken };
+
+        // POST（action=submit）
+        const res = await fetch(`${GAS_URL}?action=submit&ua=${encodeURIComponent(navigator.userAgent)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => null);
+
+        // 失敗した場合（GAS側のエラー）
+        if (!data || !data.ok) {
+          setMsg(`送信に失敗しました。\n${data?.error || "Unknown error"}`, "danger");
+          return;
+        }
+
+        // 成功：下書きを消す
+        localStorage.removeItem(DRAFT_KEY);
+        // token は使い捨てなのでクリア
+        turnstileToken = "";
+
+        setMsg("送信完了！ご協力ありがとうございます。", "ok");
+
+      } finally {
+        $("submit").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
