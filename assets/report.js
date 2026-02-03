@@ -5,15 +5,15 @@ const slotGrid = document.getElementById("slotGrid");
 const submitBtn = document.getElementById("submit");
 const msg = document.getElementById("msg");
 
-// sitekey 差し替え（HTMLにもあるが念のため）
-const tsDiv = document.getElementById("ts");
-tsDiv.setAttribute("data-sitekey", CONFIG.TURNSTILE_SITEKEY);
+const tsContainer = document.getElementById("ts");
 
-function renderRound(){
+let widgetId = null;
+
+function renderRound() {
   roundSel.innerHTML = CONFIG.ROUNDS.map(r => `<option value="${r}">${r}</option>`).join("");
 }
 
-function makeSlotCard(date, slot){
+function makeSlotCard(date, slot) {
   const id = `${date}_S${slot}`;
   return `
     <div class="slotCard">
@@ -36,24 +36,24 @@ function makeSlotCard(date, slot){
   `;
 }
 
-function renderSlots(){
+function renderSlots() {
   const html = [];
-  for (const date of CONFIG.DATES){
-    for (const slot of CONFIG.SLOTS){
+  for (const date of CONFIG.DATES) {
+    for (const slot of CONFIG.SLOTS) {
       html.push(makeSlotCard(date, slot));
     }
   }
   slotGrid.innerHTML = html.join("");
 }
 
-function setMsg(type, text){
+function setMsg(type, text) {
   msg.innerHTML = `<div class="${type}">${text}</div>`;
 }
 
-function collectRecords(){
+function collectRecords() {
   const records = [];
-  for (const date of CONFIG.DATES){
-    for (const slot of CONFIG.SLOTS){
+  for (const date of CONFIG.DATES) {
+    for (const slot of CONFIG.SLOTS) {
       const id = `${date}_S${slot}`;
       const cntEl = document.getElementById(`cnt_${id}`);
       const rejEl = document.getElementById(`rej_${id}`);
@@ -74,19 +74,46 @@ function collectRecords(){
   return records;
 }
 
-async function onSubmit(){
+// Turnstile を「確実に」描画する
+async function initTurnstile() {
+  setMsg("notice", "Turnstile準備中…");
+
+  // window.turnstile が来るまで待つ（async/defer対策）
+  for (let i = 0; i < 100; i++) {
+    if (window.turnstile && typeof window.turnstile.render === "function") break;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  if (!window.turnstile) {
+    setMsg("error", "Turnstileの読み込みに失敗しました。ページを再読み込みしてください。");
+    return;
+  }
+
+  // 既に描画済みなら一旦クリア
+  tsContainer.innerHTML = "";
+
+  widgetId = window.turnstile.render(tsContainer, {
+    sitekey: CONFIG.TURNSTILE_SITEKEY,
+  });
+
+  setMsg("success", "準備OK。入力して送信できます。");
+}
+
+async function onSubmit() {
   submitBtn.disabled = true;
   setMsg("notice", "送信中…");
 
-  try{
-    // Turnstile token 取得
-    // ※ turnstile グローバルが使える前提
-    const token = window.turnstile?.getResponse();
-    if (!token) throw new Error("Turnstileが未完了です（チェックしてください）");
+  try {
+    if (widgetId === null || !window.turnstile) {
+      throw new Error("Turnstileが未準備です。ページを再読み込みしてください。");
+    }
 
-    const submissionId = uuidv4();
+    const token = window.turnstile.getResponse(widgetId);
+    if (!token) {
+      throw new Error("Turnstileが未完了です（チェックしてください）");
+    }
+
     const payload = {
-      submissionId,
+      submissionId: uuidv4(),
       round: roundSel.value,
       turnstileToken: token,
       userAgent: navigator.userAgent,
@@ -95,13 +122,13 @@ async function onSubmit(){
 
     await apiPostReport(payload);
 
-    // token リセット（次の投稿に備える）
-    window.turnstile?.reset();
+    // 次の送信に備えてリセット
+    window.turnstile.reset(widgetId);
 
     setMsg("success", "送信しました！ありがとうございます。ダッシュボードで反映を確認できます。");
-  }catch(err){
+  } catch (err) {
     setMsg("error", `送信に失敗：${err.message || err}`);
-  }finally{
+  } finally {
     submitBtn.disabled = false;
   }
 }
@@ -109,4 +136,4 @@ async function onSubmit(){
 renderRound();
 renderSlots();
 submitBtn.addEventListener("click", onSubmit);
-
+initTurnstile();
