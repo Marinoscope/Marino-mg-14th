@@ -10,7 +10,7 @@
 
   <style>
     :root{
-      --bg: #EAF6F2;
+      --bg:#EAF6F2;
       --card:#FFFFFF;
       --text:#1C2B2A;
       --muted:#4A6663;
@@ -46,7 +46,7 @@
       margin: 6px 2px 10px;
       font-size: 13px;
     }
-    a{ color: #133B37; text-decoration:none; font-weight:700; }
+    a{ color:#133B37; text-decoration:none; font-weight:700; }
     a:hover{ text-decoration:underline; }
 
     .title{
@@ -60,7 +60,6 @@
       border: 1px solid rgba(255,255,255,.6);
     }
     h1{ font-size: 18px; margin: 0; }
-    .sub{ margin: 4px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 
     .card{
       background: rgba(255,255,255,.92);
@@ -80,13 +79,6 @@
       border: 1px solid #c9ded9;
       background: #fff;
       font-weight: 700;
-    }
-
-    .hint{
-      font-size: 12px;
-      color: var(--muted);
-      line-height:1.6;
-      margin-top: 8px;
     }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top: 12px; }
@@ -124,19 +116,7 @@
     .msg.ok{ color: var(--ok); font-weight:800; }
     .msg.danger{ color: var(--danger); font-weight:800; }
 
-    /* ===== 入力UI：スマホはカード、PCは表 ===== */
-    .mobileOnly{ display:block; }
-    .desktopOnly{ display:none; }
-
-    @media (min-width: 900px){
-      .wrap{ padding: 22px 16px 34px; }
-      h1{ font-size: 22px; }
-      .sub{ font-size: 13.5px; }
-      .mobileOnly{ display:none; }
-      .desktopOnly{ display:block; }
-    }
-
-    /* スマホ：日程カード */
+    /* スマホ：日程カード（入力しやすさ優先） */
     .dateCard{
       border:1px solid rgba(0,0,0,.06);
       border-radius: 16px;
@@ -149,15 +129,6 @@
       font-weight: 900;
       color:#163E3A;
       margin-bottom: 8px;
-    }
-    .pill{
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(231,138,162,.28);
-      background: rgba(246,183,198,.35);
-      color:#5A2A37;
-      font-weight: 900;
     }
 
     .slotRow{
@@ -200,17 +171,14 @@
     }
     .chk input{ width: 18px; height: 18px; }
 
-    /* PC：表 */
-    .grid{ overflow:auto; margin-top: 10px; border-radius: 16px; }
-    table{ border-collapse:collapse; min-width: 860px; background: rgba(255,255,255,.96); }
-    th, td{ border:1px solid rgba(0,0,0,.06); padding: 10px; text-align:center; }
-    th{ background: rgba(207,233,226,.55); color:#0F3B35; position: sticky; top:0; z-index: 1; }
-    td:first-child{ background: rgba(246,183,198,.20); text-align:left; font-weight: 900; position: sticky; left:0; z-index: 1; }
-    .cell{ display:flex; flex-direction:column; gap:8px; align-items:center; }
-    .cell input[type="number"]{ width: 96px; padding: 10px; }
-    .cell .chk{ padding: 8px 10px; }
     .turnstileBox{ margin-top: 10px; }
     .tsState{ font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 800; }
+
+    /* PCでは幅を少し広く */
+    @media (min-width: 900px){
+      .wrap{ padding: 22px 16px 34px; }
+      h1{ font-size: 22px; }
+    }
   </style>
 </head>
 
@@ -224,33 +192,21 @@
     <div class="title">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>応募枚数を報告する（匿名）</h1>
-        <div class="sub">
-          スマホ入力しやすい「日程カード」方式。PCでは表も表示されます。<br/>
-          ※「落選あり」は一部落選を含みます（完売の可能性の目安）。
-        </div>
+        <h1>応募枚数を報告する</h1>
       </div>
     </div>
 
-    <!-- ステップ1 -->
+    <!-- ステップ1：応募次 -->
     <div class="card" id="step1">
-      <label for="round">何次応募の枚数の報告ですか？</label>
+      <label for="round">何次応募の報告ですか？</label>
       <select id="round"></select>
-      <div class="hint">
-        「何次」は裏で保存します（将来の分析用）。公開表示は<strong>合算のみ</strong>です。
-      </div>
       <div class="row">
-        <button id="go" class="secondary">次へ（入力を開く）</button>
+        <button id="go" class="secondary">入力へ</button>
       </div>
     </div>
 
-    <!-- ステップ2 -->
+    <!-- ステップ2：入力＆送信 -->
     <div class="card" id="step2" style="display:none;">
-      <div class="hint">
-        応募していない枠は未入力でもOK（送信時に0扱い）。<br/>
-        「全部0で埋める」→必要な枠だけ数字を入れるのが早いです。
-      </div>
-
       <div class="row">
         <button id="fill0" class="secondary">全部0で埋める</button>
         <button id="restore" class="secondary">下書きを復元</button>
@@ -258,13 +214,7 @@
         <div class="sum">今回の合計：<span id="total">0</span></div>
       </div>
 
-      <!-- スマホ向け（日程カード） -->
-      <div id="mobile" class="mobileOnly"></div>
-
-      <!-- PC向け（表） -->
-      <div id="desktop" class="desktopOnly">
-        <div class="grid" id="grid"></div>
-      </div>
+      <div id="mobile"></div>
 
       <!-- Turnstile -->
       <div class="turnstileBox">
@@ -309,10 +259,10 @@
     let turnstileToken = "";
     let currentRound = "";
     let turnstileWidgetId = null;
-    const DRAFT_KEY = "mg14_draft_v2";
+    const DRAFT_KEY = "mg14_draft_v3";
 
     /******************************************************************
-     * 何次応募の選択肢
+     * 応募次の選択肢
      ******************************************************************/
     const roundSel = $("round");
     for (let i = 1; i <= ROUND_MAX; i++) {
@@ -323,32 +273,29 @@
     }
 
     /******************************************************************
-     * ステップ遷移
+     * ステップ移動
      ******************************************************************/
     $("go").addEventListener("click", async () => {
       currentRound = roundSel.value;
       $("step1").style.display = "none";
       $("step2").style.display = "block";
 
-      // UIを描画（スマホ：カード / PC：表）
       renderMobileCards();
-      renderDesktopTable();
       updateTotal();
 
-      // Turnstileを確実に描画
       await renderTurnstileExplicit();
     });
 
     /******************************************************************
-     * Turnstile（明示描画・確実方式）
+     * Turnstile（明示描画）
      ******************************************************************/
     async function renderTurnstileExplicit() {
       $("tsState").textContent = "CAPTCHA：読み込み中…";
       const ok = await waitForTurnstile(10000);
 
       if (!ok) {
-        $("tsState").textContent = "CAPTCHA：読み込み失敗（広告ブロッカー等を確認）";
-        setMsg("Turnstileが読み込めませんでした。広告ブロッカー/トラッキング防止を一時的にOFFにして再読込してください。", "danger");
+        $("tsState").textContent = "CAPTCHA：読み込み失敗";
+        setMsg("CAPTCHAの読み込みに失敗しました。広告ブロッカー等をOFFにして再読み込みしてください。", "danger");
         return;
       }
 
@@ -367,7 +314,7 @@
         },
         "error-callback": () => {
           turnstileToken = "";
-          $("tsState").textContent = "CAPTCHA：エラー（Hostnames/キーを確認）";
+          $("tsState").textContent = "CAPTCHA：エラー";
         }
       });
     }
@@ -387,8 +334,7 @@
     }
 
     /******************************************************************
-     * 入力要素の生成（共通）
-     * - key = "YYYY-MM-DD#slot"
+     * スマホ向け：日程カードUI
      ******************************************************************/
     function makeKey(dateIso, slot){ return `${dateIso}#${slot}`; }
 
@@ -397,9 +343,6 @@
       chk.addEventListener("change", () => saveDraft(true));
     }
 
-    /******************************************************************
-     * スマホ向け：日程カードUI
-     ******************************************************************/
     function renderMobileCards(){
       const root = $("mobile");
       root.innerHTML = "";
@@ -410,7 +353,7 @@
 
         const head = document.createElement("div");
         head.className = "dateHead";
-        head.innerHTML = `<span>${d.label}</span><span class="pill">第6部固定（入力は全6部）</span>`;
+        head.textContent = d.label;
         card.appendChild(head);
 
         for (const s of SLOTS) {
@@ -459,81 +402,24 @@
     }
 
     /******************************************************************
-     * PC向け：表UI
+     * 合計・下書き
      ******************************************************************/
-    function renderDesktopTable(){
-      const grid = $("grid");
-      grid.innerHTML = "";
-
-      const table = document.createElement("table");
-      const thead = document.createElement("thead");
-      const trh = document.createElement("tr");
-
-      const th0 = document.createElement("th");
-      th0.textContent = "日程 / 部";
-      trh.appendChild(th0);
-
-      for (const s of SLOTS) {
-        const th = document.createElement("th");
-        th.textContent = `第${s}部`;
-        trh.appendChild(th);
-      }
-
-      thead.appendChild(trh);
-      table.appendChild(thead);
-
-      const tbody = document.createElement("tbody");
-
-      for (const d of DATES) {
-        const tr = document.createElement("tr");
-
-        const tdDate = document.createElement("td");
-        tdDate.textContent = d.label;
-        tr.appendChild(tdDate);
-
-        for (const s of SLOTS) {
-          const td = document.createElement("td");
-          const key = makeKey(d.iso, s);
-
-          const cell = document.createElement("div");
-          cell.className = "cell";
-
-          const num = document.createElement("input");
-          num.type = "number";
-          num.min = "0";
-          num.max = "999";
-          num.step = "1";
-          num.placeholder = "0";
-          num.dataset.key = key;
-
-          const label = document.createElement("label");
-          label.className = "chk";
-          const chk = document.createElement("input");
-          chk.type = "checkbox";
-          chk.dataset.key = key;
-          const span = document.createElement("span");
-          span.textContent = "落選あり";
-          label.appendChild(chk);
-          label.appendChild(span);
-
-          bindInputEvents(num, chk);
-
-          cell.appendChild(num);
-          cell.appendChild(label);
-          td.appendChild(cell);
-          tr.appendChild(td);
-        }
-
-        tbody.appendChild(tr);
-      }
-
-      table.appendChild(tbody);
-      grid.appendChild(table);
+    function getAllInputs(){
+      return Array.from(document.querySelectorAll('input[type="number"][data-key]'));
+    }
+    function getAllChecks(){
+      return Array.from(document.querySelectorAll('input[type="checkbox"][data-key]'));
     }
 
-    /******************************************************************
-     * 「全部0で埋める」など
-     ******************************************************************/
+    function updateTotal(){
+      let sum = 0;
+      for (const inp of getAllInputs()) {
+        const v = Number(inp.value || 0);
+        if (Number.isFinite(v)) sum += v;
+      }
+      $("total").textContent = String(sum);
+    }
+
     $("fill0").addEventListener("click", () => {
       for (const inp of getAllInputs()) inp.value = "0";
       updateTotal();
@@ -551,25 +437,6 @@
       setMsg("下書きを削除しました。", "ok");
     });
 
-    function getAllInputs(){
-      return Array.from(document.querySelectorAll('input[type="number"][data-key]'));
-    }
-    function getAllChecks(){
-      return Array.from(document.querySelectorAll('input[type="checkbox"][data-key]'));
-    }
-
-    function updateTotal(){
-      let sum = 0;
-      for (const inp of getAllInputs()) {
-        const v = Number(inp.value || 0);
-        if (Number.isFinite(v)) sum += v;
-      }
-      $("total").textContent = String(sum);
-    }
-
-    /******************************************************************
-     * 下書き（端末内のみ）
-     ******************************************************************/
     function saveDraft(silent){
       const data = { round: currentRound, values: {}, rejected: {} };
       for (const inp of getAllInputs()) data.values[inp.dataset.key] = inp.value ?? "";
@@ -585,19 +452,13 @@
       try { data = JSON.parse(raw); } catch { return; }
       if (!apply) return;
 
-      if (data.round && data.round !== currentRound) {
-        setMsg(`下書きは「${data.round}」として保存されています。現在は「${currentRound}」です（復元は実行します）。`, "danger");
-      } else {
-        setMsg("下書きを復元しました。", "ok");
-      }
-
-      // 同じ key の入力要素がスマホ/PC両方に存在するので、全件に反映してOK
       for (const inp of getAllInputs()) {
         const v = (data.values && (inp.dataset.key in data.values)) ? data.values[inp.dataset.key] : "";
         inp.value = v ?? "";
       }
       for (const chk of getAllChecks()) chk.checked = !!(data.rejected && data.rejected[chk.dataset.key]);
       updateTotal();
+      setMsg("下書きを復元しました。", "ok");
     }
 
     function setMsg(text, kind){
@@ -607,7 +468,9 @@
     }
 
     /******************************************************************
-     * 送信（GASへPOST）
+     * 送信（重要：CORS preflight を避ける）
+     * - Content-Type を application/json にしない
+     * - text/plain で JSON文字列を送る（これで preflight が起きにくい）
      ******************************************************************/
     $("submit").addEventListener("click", async () => {
       $("submit").disabled = true;
@@ -615,20 +478,17 @@
       try {
         if (!currentRound) { setMsg("応募次が未選択です。", "danger"); return; }
 
-        // token が無い = Turnstile未完了
         if (!turnstileToken) {
           setMsg("CAPTCHA確認がまだです。CAPTCHAが「OK」になるまで少し待ってください。", "danger");
           return;
         }
 
-        // 36枠を必ず作る（未入力は0）
+        setMsg("送信中…", "ok");
+
         const entries = [];
         for (const d of DATES) {
           for (const s of SLOTS) {
             const key = makeKey(d.iso, s);
-
-            // 同じkeyの入力が複数ある（スマホ/PC両方）ため、最初に見つかったものを採用。
-            // ただし復元やfill0で両方同期するので基本問題なし。
             const inp = document.querySelector(`input[type="number"][data-key="${key}"]`);
             const chk = document.querySelector(`input[type="checkbox"][data-key="${key}"]`);
 
@@ -644,7 +504,10 @@
 
         const res = await fetch(`${GAS_URL}?action=submit&ua=${encodeURIComponent(navigator.userAgent)}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            // ★ここがポイント：text/plain なら “単純リクエスト” 扱いになりやすい
+            "Content-Type": "text/plain;charset=utf-8"
+          },
           body: JSON.stringify(payload)
         });
 
@@ -654,7 +517,6 @@
           return;
         }
 
-        // 成功：下書きを削除、tokenクリア、Turnstile reset
         localStorage.removeItem(DRAFT_KEY);
         turnstileToken = "";
         $("tsState").textContent = "CAPTCHA：未確認（次の送信は再判定）";
@@ -665,6 +527,8 @@
 
         setMsg("送信完了！ご協力ありがとうございます。", "ok");
 
+      } catch (e) {
+        setMsg(`送信に失敗しました。\n${String(e)}`, "danger");
       } finally {
         $("submit").disabled = false;
       }
