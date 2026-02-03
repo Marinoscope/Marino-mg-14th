@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>ダッシュボード | 幸阪茉里乃 ミーグリ応募集計</title>
+  <title>集計結果 | 14th #まりのみーぐり 応募数集計サイト</title>
   <link rel="stylesheet" href="./assets/styles.css"/>
 </head>
 <body>
@@ -14,20 +14,20 @@
     </div>
 
     <div class="card">
-      <h2>濃淡ヒートマップ（数値非公開）</h2>
-      <div class="p small">濃いほど応募が多い（相対）。●は落選報告あり（完売シグナル）。</div>
+      <h2>集計結果表</h2>
+      <div class="p small">色が濃いほど相対的に応募数が多い。★は落選報告のあった枠。</div>
       <div class="tablewrap" id="mapWrap"></div>
 
       <div class="hr"></div>
 
-      <h2>落選シグナル（ありの枠）</h2>
-      <div class="p small">件数は出しません。「あり」の枠だけ表示します。</div>
+      <h2>落選報告のあった枠</h2>
+      <div class="p small">日付と報告件数を表示しています。</div>
       <div id="rejList" class="p"></div>
 
       <div class="hr"></div>
 
-      <h2>累計数値（PINで解放）</h2>
-      <div class="p small">PINを知っている人だけ合算数値を見られます（公開JSONには数値を含めません）。</div>
+      <h2>応募総数（数値）の確認</h2>
+      <div class="p small">オープンチャットで配布されたコードを入力してください。</div>
       <div class="row">
         <input id="pin" class="input" style="max-width:220px" placeholder="PIN" inputmode="numeric"/>
         <button id="unlock" class="btn primary">表示する</button>
