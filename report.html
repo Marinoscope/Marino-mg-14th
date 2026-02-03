@@ -3,185 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>応募枚数を報告する</title>
-
-  <!-- Turnstile（明示描画） -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
-
+  <title>応募枚数の報告</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     :root{
-      --bg:#EAF6F2;
-      --card:#FFFFFF;
-      --text:#1C2B2A;
-      --muted:#4A6663;
-
-      --pink:#F6B7C6;
-      --pink-deep:#E78AA2;
-
-      --green:#2F7D73;
-      --green-soft:#CFE9E2;
-
-      --border:#D7E7E2;
-      --shadow: 0 10px 28px rgba(24, 74, 67, .10);
-      --radius: 18px;
-
+      --bg:#EAF6F2; --text:#1C2B2A; --muted:#4A6663;
+      --border:#D7E7E2; --shadow:0 10px 28px rgba(24,74,67,.10);
+      --radius:18px;
+      --pink:#F6B7C6; --green:#2F7D73;
       --danger:#B00020;
-      --ok:#0B6;
     }
-
     *{ box-sizing:border-box; }
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      color: var(--text);
+      margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--text);
       background:
         radial-gradient(1200px 600px at 20% -10%, rgba(246,183,198,.35), transparent 60%),
         radial-gradient(1200px 700px at 90% 10%, rgba(47,125,115,.18), transparent 60%),
         var(--bg);
     }
-
-    .wrap{ max-width: 980px; margin: 0 auto; padding: 16px 12px 28px; }
-    .top{
-      display:flex; justify-content:space-between; align-items:center; gap:12px;
-      margin: 6px 2px 10px;
-      font-size: 13px;
-    }
+    .wrap{ max-width:980px; margin:0 auto; padding:16px 12px 28px; }
+    .top{ display:flex; justify-content:space-between; margin:6px 2px 10px; font-size:13px; }
     a{ color:#133B37; text-decoration:none; font-weight:700; }
-    a:hover{ text-decoration:underline; }
-
-    .title{
-      display:flex; align-items:center; gap:10px;
-      margin: 6px 2px 8px;
-    }
-    .logo{
-      width: 40px; height: 40px; border-radius: 14px;
-      background: linear-gradient(135deg, rgba(246,183,198,.95), rgba(47,125,115,.35));
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,.6);
-    }
-    h1{ font-size: 18px; margin: 0; }
 
     .card{
-      background: rgba(255,255,255,.92);
+      background:rgba(255,255,255,.92);
       border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-      margin-top: 12px;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px; margin-top:12px;
       backdrop-filter: blur(6px);
     }
+    h1{ font-size:18px; margin:0 0 6px; }
+    .hint{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:6px; }
 
-    label{ display:block; font-weight:800; margin: 0 0 8px; }
-    select{
-      width: 100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid #c9ded9;
-      background: #fff;
-      font-weight: 700;
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    select, button{
+      font:inherit;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,.10);
+      padding:12px 12px;
+      background:#fff;
     }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top: 12px; }
+    select{ flex:1; min-width:180px; }
     button{
-      padding: 12px 14px;
-      border-radius: 14px;
-      border:1px solid rgba(0,0,0,.08);
-      background: linear-gradient(135deg, rgba(246,183,198,.95), rgba(246,183,198,.75));
-      color:#4A1F2A;
-      font-weight: 900;
+      font-weight:900;
+      background:linear-gradient(135deg, rgba(246,183,198,.95), rgba(47,125,115,.35));
       cursor:pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 10px 22px rgba(231,138,162,.18);
     }
-    button.secondary{
-      background: linear-gradient(135deg, rgba(207,233,226,.95), rgba(207,233,226,.72));
-      color:#0E3B35;
-      box-shadow: 0 10px 22px rgba(47,125,115,.14);
-    }
-    button:disabled{ opacity:.6; cursor:not-allowed; }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    .sum{
-      font-weight: 900;
-      margin-left:auto;
-      color:#163E3A;
-      background: rgba(207,233,226,.55);
-      border:1px solid rgba(47,125,115,.18);
-      padding: 8px 10px;
-      border-radius: 999px;
-      font-size: 12.5px;
+    .tableWrap{ overflow:auto; border-radius:16px; margin-top:12px; }
+    table{ border-collapse:collapse; min-width:860px; width:100%; background:rgba(255,255,255,.96); }
+    th,td{ border:1px solid rgba(0,0,0,.06); padding:10px; text-align:center; }
+    th{
+      position:sticky; top:0; z-index:2;
+      background:rgba(207,233,226,.55);
+      font-weight:900;
     }
-
-    .msg{ margin-top: 10px; font-size: 13px; white-space:pre-wrap; }
-    .msg.ok{ color: var(--ok); font-weight:800; }
-    .msg.danger{ color: var(--danger); font-weight:800; }
-
-    /* スマホ：日程カード（入力しやすさ優先） */
-    .dateCard{
-      border:1px solid rgba(0,0,0,.06);
-      border-radius: 16px;
-      padding: 12px;
-      margin-top: 10px;
-      background: rgba(255,255,255,.96);
+    td:first-child{
+      position:sticky; left:0; z-index:1;
+      background:rgba(246,183,198,.20);
+      text-align:left;
+      font-weight:900;
+      white-space:nowrap;
     }
-    .dateHead{
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      font-weight: 900;
-      color:#163E3A;
-      margin-bottom: 8px;
-    }
-
-    .slotRow{
-      display:grid;
-      grid-template-columns: 72px 1fr;
-      gap: 10px;
-      align-items:center;
-      padding: 8px 0;
-      border-top: 1px dashed rgba(0,0,0,.08);
-    }
-    .slotRow:first-of-type{ border-top:none; }
-    .slotLabel{ font-weight: 900; color:#143C37; font-size: 13px; }
-
-    .slotControls{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items:center;
-    }
-
     input[type="number"]{
-      width: 100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border:1px solid #c9ded9;
-      font-weight: 800;
+      width:92px;
+      padding:10px 8px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.14);
+      font:inherit;
+      text-align:center;
       background:#fff;
     }
     .chk{
-      display:flex; align-items:center; gap:6px;
-      font-size: 12px;
-      color:#2B4C48;
-      font-weight: 800;
-      user-select:none;
-      padding: 10px 10px;
-      border-radius: 14px;
-      border:1px solid rgba(47,125,115,.18);
-      background: rgba(207,233,226,.40);
-      white-space:nowrap;
+      transform:scale(1.2);
+      accent-color: var(--green);
     }
-    .chk input{ width: 18px; height: 18px; }
 
-    .turnstileBox{ margin-top: 10px; }
-    .tsState{ font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 800; }
+    .msg{ margin-top:10px; font-weight:900; }
+    .danger{ color:var(--danger); }
+    .ok{ color:var(--green); }
 
-    /* PCでは幅を少し広く */
-    @media (min-width: 900px){
-      .wrap{ padding: 22px 16px 34px; }
-      h1{ font-size: 22px; }
+    .tsWrap{ margin-top:12px; }
+    @media (min-width:900px){
+      h1{ font-size:22px; }
+      input[type="number"]{ width:100px; }
     }
   </style>
 </head>
-
 <body>
   <div class="wrap">
     <div class="top">
@@ -189,350 +99,247 @@
       <a href="./dashboard.html">集計を見る →</a>
     </div>
 
-    <div class="title">
-      <div class="logo" aria-hidden="true"></div>
-      <div>
-        <h1>応募枚数を報告する</h1>
-      </div>
-    </div>
-
-    <!-- ステップ1：応募次 -->
-    <div class="card" id="step1">
-      <label for="round">何次応募の報告ですか？</label>
-      <select id="round"></select>
-      <div class="row">
-        <button id="go" class="secondary">入力へ</button>
-      </div>
-    </div>
-
-    <!-- ステップ2：入力＆送信 -->
-    <div class="card" id="step2" style="display:none;">
-      <div class="row">
-        <button id="fill0" class="secondary">全部0で埋める</button>
-        <button id="restore" class="secondary">下書きを復元</button>
-        <button id="clearDraft" class="secondary">下書きを消す</button>
-        <div class="sum">今回の合計：<span id="total">0</span></div>
-      </div>
-
-      <div id="mobile"></div>
-
-      <!-- Turnstile -->
-      <div class="turnstileBox">
-        <div id="ts"></div>
-        <div class="tsState" id="tsState">CAPTCHA：未確認</div>
+    <div class="card">
+      <h1>応募枚数の報告</h1>
+      <div class="hint">
+        何次応募の報告か選び、各日程×各部の応募枚数を入力してください。<br>
+        未入力は <b>0</b> として扱われます。落選があった枠はチェックしてください（枚数は不要）。
       </div>
 
       <div class="row">
-        <button id="submit">送信</button>
-        <button id="saveDraft" class="secondary">下書きを保存</button>
+        <select id="round">
+          <!-- 1〜15次固定（必要なら増やせます） -->
+          <option value="">何次応募？（必須）</option>
+        </select>
+
+        <button id="sendBtn" disabled>送信</button>
       </div>
 
-      <div class="msg" id="msg"></div>
+      <div class="tableWrap" id="tableWrap"></div>
+
+      <!-- Turnstile（左下に出るかは環境によります。出てもOK） -->
+      <div class="tsWrap">
+        <div class="cf-turnstile"
+             data-sitekey="0x4AAAAAACXGSWcz_G9TQ_K4"
+             data-theme="light"
+             data-callback="onTurnstileSuccess"
+             data-expired-callback="onTurnstileExpired"></div>
+      </div>
+
+      <div id="msg" class="msg"></div>
     </div>
   </div>
 
   <script>
-    /******************************************************************
-     * 【設定値：埋め込み済み】
-     ******************************************************************/
+    // ★これだけが唯一のGAS URL（クエリは使わない）
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
-    const TURNSTILE_SITE_KEY = "0x4AAAAAACXGSWcz_G9TQ_K4";
 
-    /******************************************************************
-     * 【固定日程・固定部】
-     ******************************************************************/
     const DATES = [
-      { iso:"2026-03-15", label:"3月15日(日)" },
-      { iso:"2026-03-29", label:"3月29日(日)" },
-      { iso:"2026-04-05", label:"4月5日(日)"  },
-      { iso:"2026-04-19", label:"4月19日(日)" },
-      { iso:"2026-05-30", label:"5月30日(土)" },
-      { iso:"2026-05-31", label:"5月31日(日)" },
+      "2026-03-15",
+      "2026-03-29",
+      "2026-04-05",
+      "2026-04-19",
+      "2026-05-30",
+      "2026-05-31",
     ];
     const SLOTS = [1,2,3,4,5,6];
-    const ROUND_MAX = 15;
 
-    /******************************************************************
-     * 【状態】
-     ******************************************************************/
-    const $ = (id) => document.getElementById(id);
+    // Turnstile token
     let turnstileToken = "";
-    let currentRound = "";
-    let turnstileWidgetId = null;
-    const DRAFT_KEY = "mg14_draft_v3";
 
-    /******************************************************************
-     * 応募次の選択肢
-     ******************************************************************/
-    const roundSel = $("round");
-    for (let i = 1; i <= ROUND_MAX; i++) {
-      const opt = document.createElement("option");
-      opt.value = `${i}次`;
-      opt.textContent = `${i}次`;
-      roundSel.appendChild(opt);
+    // UI refs
+    const roundEl = document.getElementById("round");
+    const sendBtn = document.getElementById("sendBtn");
+    const msgEl = document.getElementById("msg");
+    const tableWrap = document.getElementById("tableWrap");
+
+    function formatDateJP(iso){
+      const [y,m,d] = String(iso).split("-").map(Number);
+      if (!y || !m || !d) return String(iso);
+      return `${m}月${d}日`;
     }
 
-    /******************************************************************
-     * ステップ移動
-     ******************************************************************/
-    $("go").addEventListener("click", async () => {
-      currentRound = roundSel.value;
-      $("step1").style.display = "none";
-      $("step2").style.display = "block";
+    // 1〜15次の選択肢を作成
+    function initRounds(){
+      for (let i=1;i<=15;i++){
+        const opt = document.createElement("option");
+        opt.value = `${i}次`;
+        opt.textContent = `${i}次応募`;
+        roundEl.appendChild(opt);
+      }
+    }
 
-      renderMobileCards();
-      updateTotal();
+    // 入力テーブル生成（手動集計に近い“表”）
+    function buildTable(){
+      const table = document.createElement("table");
 
-      await renderTurnstileExplicit();
-    });
+      // head
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
 
-    /******************************************************************
-     * Turnstile（明示描画）
-     ******************************************************************/
-    async function renderTurnstileExplicit() {
-      $("tsState").textContent = "CAPTCHA：読み込み中…";
-      const ok = await waitForTurnstile(10000);
+      const th0 = document.createElement("th");
+      th0.textContent = "日程";
+      trh.appendChild(th0);
 
-      if (!ok) {
-        $("tsState").textContent = "CAPTCHA：読み込み失敗";
-        setMsg("CAPTCHAの読み込みに失敗しました。広告ブロッカー等をOFFにして再読み込みしてください。", "danger");
+      for (const s of SLOTS){
+        const th = document.createElement("th");
+        th.textContent = `第${s}部`;
+        trh.appendChild(th);
+      }
+      // 落選列
+      const thR = document.createElement("th");
+      thR.textContent = "落選あり";
+      trh.appendChild(thR);
+
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      // body
+      const tbody = document.createElement("tbody");
+
+      for (const date of DATES){
+        const tr = document.createElement("tr");
+
+        const tdD = document.createElement("td");
+        tdD.textContent = formatDateJP(date);
+        tr.appendChild(tdD);
+
+        for (const slot of SLOTS){
+          const td = document.createElement("td");
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "0";
+          input.inputMode = "numeric";
+          input.placeholder = "0";
+          input.dataset.date = date;
+          input.dataset.slot = String(slot);
+
+          // 未入力は0扱い（送信時に吸収）
+          td.appendChild(input);
+          tr.appendChild(td);
+        }
+
+        // 落選チェック（「この日程で落選報告あり」扱いでOK）
+        const tdRej = document.createElement("td");
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.className = "chk";
+        chk.dataset.date = date;
+        chk.dataset.rej = "1";
+        tdRej.appendChild(chk);
+        tr.appendChild(tdRej);
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      tableWrap.innerHTML = "";
+      tableWrap.appendChild(table);
+    }
+
+    function setMsg(text, type){
+      msgEl.textContent = text;
+      msgEl.classList.remove("danger","ok");
+      if (type) msgEl.classList.add(type);
+    }
+
+    function updateSendEnabled(){
+      const hasRound = !!roundEl.value;
+      const hasToken = !!turnstileToken;
+      sendBtn.disabled = !(hasRound && hasToken);
+    }
+
+    // Turnstile callbacks（グローバルに必要）
+    window.onTurnstileSuccess = function(token){
+      turnstileToken = token || "";
+      updateSendEnabled();
+    };
+    window.onTurnstileExpired = function(){
+      turnstileToken = "";
+      updateSendEnabled();
+    };
+
+    async function send(){
+      setMsg("", "");
+
+      if (!roundEl.value){
+        setMsg("何次応募か選んでください。", "danger");
+        return;
+      }
+      if (!turnstileToken){
+        setMsg("認証（Turnstile）が完了していません。", "danger");
         return;
       }
 
-      const container = $("ts");
-      container.innerHTML = "";
+      sendBtn.disabled = true;
+      setMsg("送信中…", "");
 
-      turnstileWidgetId = window.turnstile.render(container, {
-        sitekey: TURNSTILE_SITE_KEY,
-        callback: (token) => {
-          turnstileToken = token;
-          $("tsState").textContent = "CAPTCHA：OK";
-        },
-        "expired-callback": () => {
-          turnstileToken = "";
-          $("tsState").textContent = "CAPTCHA：期限切れ（再判定中）";
-        },
-        "error-callback": () => {
-          turnstileToken = "";
-          $("tsState").textContent = "CAPTCHA：エラー";
+      // entries生成（36枠）
+      const inputs = Array.from(document.querySelectorAll('input[type="number"][data-date]'));
+      const rejChecks = Array.from(document.querySelectorAll('input[type="checkbox"][data-rej="1"]'));
+
+      const rejectedDates = new Set(
+        rejChecks.filter(c => c.checked).map(c => c.dataset.date)
+      );
+
+      const entries = [];
+      for (const date of DATES){
+        for (const slot of SLOTS){
+          const input = inputs.find(x => x.dataset.date === date && x.dataset.slot === String(slot));
+          const val = input && input.value !== "" ? Number(input.value) : 0;
+
+          entries.push({
+            date,
+            slot,
+            count: Number.isFinite(val) ? Math.max(0, Math.floor(val)) : 0,
+            // 「落選あり」は日程単位でOK（要件どおり）
+            rejected: rejectedDates.has(date)
+          });
         }
-      });
-    }
-
-    function waitForTurnstile(timeoutMs) {
-      const start = Date.now();
-      return new Promise((resolve) => {
-        const t = setInterval(() => {
-          if (window.turnstile && typeof window.turnstile.render === "function") {
-            clearInterval(t); resolve(true);
-          }
-          if (Date.now() - start > timeoutMs) {
-            clearInterval(t); resolve(false);
-          }
-        }, 100);
-      });
-    }
-
-    /******************************************************************
-     * スマホ向け：日程カードUI
-     ******************************************************************/
-    function makeKey(dateIso, slot){ return `${dateIso}#${slot}`; }
-
-    function bindInputEvents(num, chk){
-      num.addEventListener("input", () => { updateTotal(); saveDraft(true); });
-      chk.addEventListener("change", () => saveDraft(true));
-    }
-
-    function renderMobileCards(){
-      const root = $("mobile");
-      root.innerHTML = "";
-
-      for (const d of DATES) {
-        const card = document.createElement("div");
-        card.className = "dateCard";
-
-        const head = document.createElement("div");
-        head.className = "dateHead";
-        head.textContent = d.label;
-        card.appendChild(head);
-
-        for (const s of SLOTS) {
-          const row = document.createElement("div");
-          row.className = "slotRow";
-
-          const left = document.createElement("div");
-          left.className = "slotLabel";
-          left.textContent = `第${s}部`;
-
-          const controls = document.createElement("div");
-          controls.className = "slotControls";
-
-          const key = makeKey(d.iso, s);
-
-          const num = document.createElement("input");
-          num.type = "number";
-          num.min = "0";
-          num.max = "999";
-          num.step = "1";
-          num.placeholder = "0";
-          num.dataset.key = key;
-
-          const label = document.createElement("label");
-          label.className = "chk";
-          const chk = document.createElement("input");
-          chk.type = "checkbox";
-          chk.dataset.key = key;
-          const span = document.createElement("span");
-          span.textContent = "落選あり";
-          label.appendChild(chk);
-          label.appendChild(span);
-
-          bindInputEvents(num, chk);
-
-          controls.appendChild(num);
-          controls.appendChild(label);
-
-          row.appendChild(left);
-          row.appendChild(controls);
-          card.appendChild(row);
-        }
-
-        root.appendChild(card);
       }
-    }
 
-    /******************************************************************
-     * 合計・下書き
-     ******************************************************************/
-    function getAllInputs(){
-      return Array.from(document.querySelectorAll('input[type="number"][data-key]'));
-    }
-    function getAllChecks(){
-      return Array.from(document.querySelectorAll('input[type="checkbox"][data-key]'));
-    }
+      const payload = {
+        action: "submit",              // ★クエリ不要のためここに持たせる
+        round: roundEl.value,
+        entries,
+        turnstileToken
+      };
 
-    function updateTotal(){
-      let sum = 0;
-      for (const inp of getAllInputs()) {
-        const v = Number(inp.value || 0);
-        if (Number.isFinite(v)) sum += v;
-      }
-      $("total").textContent = String(sum);
-    }
-
-    $("fill0").addEventListener("click", () => {
-      for (const inp of getAllInputs()) inp.value = "0";
-      updateTotal();
-      saveDraft(false);
-    });
-
-    $("saveDraft").addEventListener("click", () => {
-      saveDraft(false);
-      setMsg("下書きを保存しました。", "ok");
-    });
-
-    $("restore").addEventListener("click", () => loadDraftIfAny(true));
-    $("clearDraft").addEventListener("click", () => {
-      localStorage.removeItem(DRAFT_KEY);
-      setMsg("下書きを削除しました。", "ok");
-    });
-
-    function saveDraft(silent){
-      const data = { round: currentRound, values: {}, rejected: {} };
-      for (const inp of getAllInputs()) data.values[inp.dataset.key] = inp.value ?? "";
-      for (const chk of getAllChecks()) data.rejected[chk.dataset.key] = chk.checked ? 1 : 0;
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-      if (!silent) setMsg("下書きを保存しました。", "ok");
-    }
-
-    function loadDraftIfAny(apply){
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) { if (apply) setMsg("下書きが見つかりませんでした。", "danger"); return; }
-      let data;
-      try { data = JSON.parse(raw); } catch { return; }
-      if (!apply) return;
-
-      for (const inp of getAllInputs()) {
-        const v = (data.values && (inp.dataset.key in data.values)) ? data.values[inp.dataset.key] : "";
-        inp.value = v ?? "";
-      }
-      for (const chk of getAllChecks()) chk.checked = !!(data.rejected && data.rejected[chk.dataset.key]);
-      updateTotal();
-      setMsg("下書きを復元しました。", "ok");
-    }
-
-    function setMsg(text, kind){
-      const el = $("msg");
-      el.textContent = text;
-      el.className = "msg " + (kind === "ok" ? "ok" : (kind === "danger" ? "danger" : ""));
-    }
-
-    /******************************************************************
-     * 送信（重要：CORS preflight を避ける）
-     * - Content-Type を application/json にしない
-     * - text/plain で JSON文字列を送る（これで preflight が起きにくい）
-     ******************************************************************/
-    $("submit").addEventListener("click", async () => {
-      $("submit").disabled = true;
-
-      try {
-        if (!currentRound) { setMsg("応募次が未選択です。", "danger"); return; }
-
-        if (!turnstileToken) {
-          setMsg("CAPTCHA確認がまだです。CAPTCHAが「OK」になるまで少し待ってください。", "danger");
-          return;
-        }
-
-        setMsg("送信中…", "ok");
-
-        const entries = [];
-        for (const d of DATES) {
-          for (const s of SLOTS) {
-            const key = makeKey(d.iso, s);
-            const inp = document.querySelector(`input[type="number"][data-key="${key}"]`);
-            const chk = document.querySelector(`input[type="checkbox"][data-key="${key}"]`);
-
-            const countRaw = Number(inp?.value || 0) || 0;
-            const count = Math.max(0, Math.min(999, Math.floor(countRaw)));
-            const rejected = !!(chk?.checked);
-
-            entries.push({ date: d.iso, slot: s, count, rejected });
-          }
-        }
-
-        const payload = { round: currentRound, entries, turnstileToken };
-
-        const res = await fetch(`${GAS_URL}?action=submit&ua=${encodeURIComponent(navigator.userAgent)}`, {
+      try{
+        const res = await fetch(GAS_URL, {
           method: "POST",
-          headers: {
-            // ★ここがポイント：text/plain なら “単純リクエスト” 扱いになりやすい
-            "Content-Type": "text/plain;charset=utf-8"
-          },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
 
         const data = await res.json().catch(() => null);
-        if (!data || !data.ok) {
-          setMsg(`送信に失敗しました。\n${data?.error || "Unknown error"}`, "danger");
+
+        if (!data || data.ok !== true){
+          const detail = data && (data.error || data.detail) ? JSON.stringify(data) : "";
+          setMsg("送信に失敗しました。" + (detail ? `（${detail}）` : ""), "danger");
+          sendBtn.disabled = false; // 再送できるように
           return;
         }
 
-        localStorage.removeItem(DRAFT_KEY);
+        setMsg("送信完了しました。ありがとうございます！", "ok");
+
+        // tokenは使い捨ての場合があるので安全側で無効化
         turnstileToken = "";
-        $("tsState").textContent = "CAPTCHA：未確認（次の送信は再判定）";
+        updateSendEnabled();
 
-        if (window.turnstile && turnstileWidgetId !== null) {
-          window.turnstile.reset(turnstileWidgetId);
-        }
-
-        setMsg("送信完了！ご協力ありがとうございます。", "ok");
-
-      } catch (e) {
-        setMsg(`送信に失敗しました。\n${String(e)}`, "danger");
-      } finally {
-        $("submit").disabled = false;
+      }catch(e){
+        setMsg("送信に失敗しました（通信エラー）。", "danger");
+        sendBtn.disabled = false;
       }
-    });
+    }
+
+    // init
+    initRounds();
+    buildTable();
+    roundEl.addEventListener("change", updateSendEnabled);
+    sendBtn.addEventListener("click", send);
+    updateSendEnabled();
   </script>
 </body>
 </html>
