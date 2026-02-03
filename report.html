@@ -1,340 +1,62 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>応募枚数の報告</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>報告 | 幸阪茉里乃 ミーグリ応募集計</title>
+  <link rel="stylesheet" href="./assets/styles.css"/>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <style>
-    :root{
-      --bg:#EAF6F2; --text:#1C2B2A; --muted:#4A6663;
-      --border:#D7E7E2; --shadow:0 10px 28px rgba(24,74,67,.10);
-      --radius:18px;
-      --green:#2F7D73; --danger:#B00020;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--text);
-      background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(246,183,198,.35), transparent 60%),
-        radial-gradient(1200px 700px at 90% 10%, rgba(47,125,115,.18), transparent 60%),
-        var(--bg);
-    }
-    .wrap{ max-width:980px; margin:0 auto; padding:16px 12px 28px; }
-    .top{ display:flex; justify-content:space-between; margin:6px 2px 10px; font-size:13px; }
-    a{ color:#133B37; text-decoration:none; font-weight:700; }
-
-    .card{
-      background:rgba(255,255,255,.92);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:14px; margin-top:12px;
-      backdrop-filter: blur(6px);
-    }
-    h1{ font-size:18px; margin:0 0 6px; }
-    .hint{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:6px; }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
-    select, button{
-      font:inherit;
-      border-radius:14px;
-      border:1px solid rgba(0,0,0,.10);
-      padding:12px 12px;
-      background:#fff;
-    }
-    select{ flex:1; min-width:180px; }
-    button{
-      font-weight:900;
-      background:linear-gradient(135deg, rgba(246,183,198,.95), rgba(47,125,115,.35));
-      cursor:pointer;
-    }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
-
-    .tableWrap{ overflow:auto; border-radius:16px; margin-top:12px; }
-    table{ border-collapse:collapse; min-width:920px; width:100%; background:rgba(255,255,255,.96); }
-    th,td{ border:1px solid rgba(0,0,0,.06); padding:10px; text-align:center; }
-    th{
-      position:sticky; top:0; z-index:2;
-      background:rgba(207,233,226,.55);
-      font-weight:900;
-    }
-    td:first-child{
-      position:sticky; left:0; z-index:1;
-      background:rgba(246,183,198,.20);
-      text-align:left;
-      font-weight:900;
-      white-space:nowrap;
-    }
-    input[type="number"]{
-      width:92px;
-      padding:10px 8px;
-      border-radius:12px;
-      border:1px solid rgba(0,0,0,.14);
-      font:inherit;
-      text-align:center;
-      background:#fff;
-    }
-    .chk{
-      transform:scale(1.2);
-      accent-color: var(--green);
-    }
-
-    .msg{ margin-top:10px; font-weight:900; }
-    .danger{ color:var(--danger); }
-    .ok{ color:var(--green); }
-
-    .tsWrap{ margin-top:12px; }
-    @media (min-width:900px){
-      h1{ font-size:22px; }
-      input[type="number"]{ width:100px; }
-    }
-  </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <a href="./index.html">← 戻る</a>
-      <a href="./dashboard.html">集計を見る →</a>
+  <div class="container">
+    <div class="header">
+      <a class="brand" href="./index.html">← 戻る</a>
+      <div class="badge">report</div>
     </div>
 
     <div class="card">
-      <h1>応募枚数の報告</h1>
-      <div class="hint">
-        何次応募の報告か選び、各日程×各部の応募枚数を入力してください。<br>
-        未入力は <b>0</b> として扱われます。落選があった日程はチェックしてください（枚数は不要）。
+      <div class="step">
+        <div class="n">1</div>
+        <div style="flex:1">
+          <div style="font-weight:900;">何次応募の報告？</div>
+          <div class="p small">※あとから増やすのも簡単です</div>
+          <select id="round" class="select"></select>
+        </div>
       </div>
 
-      <div class="row">
-        <select id="round">
-          <option value="">何次応募？（必須）</option>
-        </select>
-        <button id="sendBtn" disabled>送信</button>
+      <div class="hr"></div>
+
+      <div class="step">
+        <div class="n">2</div>
+        <div style="flex:1">
+          <div style="font-weight:900;">36枠をまとめて入力</div>
+          <div class="p small">応募口数（0以上） / 落選シグナル（落選あり）</div>
+          <div id="slotGrid" class="slotGrid" style="margin-top:10px;"></div>
+        </div>
       </div>
 
-      <div class="tableWrap" id="tableWrap"></div>
+      <div class="hr"></div>
 
-      <div class="tsWrap">
-        <div class="cf-turnstile"
-             data-sitekey="0x4AAAAAACXGSWcz_G9TQ_K4"
-             data-theme="light"
-             data-callback="onTurnstileSuccess"
-             data-expired-callback="onTurnstileExpired"></div>
+      <div class="step">
+        <div class="n">3</div>
+        <div style="flex:1">
+          <div style="font-weight:900;">送信（Turnstile）</div>
+          <div class="p small">荒らし対策のため必須です</div>
+          <div class="cf-turnstile" id="ts" data-sitekey="<<<YOUR_TURNSTILE_SITEKEY>>>"></div>
+          <div class="row" style="margin-top:10px;">
+            <button id="submit" class="btn primary">送信する</button>
+            <span class="small">※「全て0で埋める」等の機能は入れていません</span>
+          </div>
+          <div id="msg" style="margin-top:10px;"></div>
+        </div>
       </div>
+    </div>
 
-      <div id="msg" class="msg"></div>
+    <div class="p small" style="margin-top:12px;">
+      イベント：櫻坂46 14thシングル ミーグリ（幸阪茉里乃）固定
     </div>
   </div>
 
-  <script>
-    // ★固定：あなたのWebアプリURL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
-
-    const DATES = [
-      "2026-03-15",
-      "2026-03-29",
-      "2026-04-05",
-      "2026-04-19",
-      "2026-05-30",
-      "2026-05-31",
-    ];
-    const SLOTS = [1,2,3,4,5,6];
-
-    // Turnstile token
-    let turnstileToken = "";
-
-    // UI refs
-    const roundEl = document.getElementById("round");
-    const sendBtn = document.getElementById("sendBtn");
-    const msgEl = document.getElementById("msg");
-    const tableWrap = document.getElementById("tableWrap");
-
-    function formatDateJP(iso){
-      const [y,m,d] = String(iso).split("-").map(Number);
-      if (!y || !m || !d) return String(iso);
-      return `${m}月${d}日`;
-    }
-
-    // 1〜15次の選択肢を作成
-    function initRounds(){
-      for (let i=1;i<=15;i++){
-        const opt = document.createElement("option");
-        opt.value = `${i}次`;
-        opt.textContent = `${i}次応募`;
-        roundEl.appendChild(opt);
-      }
-    }
-
-    // 入力テーブル生成（手動集計に近い“表”）
-    function buildTable(){
-      const table = document.createElement("table");
-
-      const thead = document.createElement("thead");
-      const trh = document.createElement("tr");
-
-      const th0 = document.createElement("th");
-      th0.textContent = "日程";
-      trh.appendChild(th0);
-
-      for (const s of SLOTS){
-        const th = document.createElement("th");
-        th.textContent = `第${s}部`;
-        trh.appendChild(th);
-      }
-
-      const thR = document.createElement("th");
-      thR.textContent = "落選あり";
-      trh.appendChild(thR);
-
-      thead.appendChild(trh);
-      table.appendChild(thead);
-
-      const tbody = document.createElement("tbody");
-
-      for (const date of DATES){
-        const tr = document.createElement("tr");
-
-        const tdD = document.createElement("td");
-        tdD.textContent = formatDateJP(date);
-        tr.appendChild(tdD);
-
-        for (const slot of SLOTS){
-          const td = document.createElement("td");
-
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "0";
-          input.inputMode = "numeric";
-          input.placeholder = "0";
-          input.dataset.date = date;
-          input.dataset.slot = String(slot);
-
-          td.appendChild(input);
-          tr.appendChild(td);
-        }
-
-        // 落選は日程単位でOK（要件どおり）
-        const tdRej = document.createElement("td");
-        const chk = document.createElement("input");
-        chk.type = "checkbox";
-        chk.className = "chk";
-        chk.dataset.date = date;
-        chk.dataset.rej = "1";
-        tdRej.appendChild(chk);
-        tr.appendChild(tdRej);
-
-        tbody.appendChild(tr);
-      }
-
-      table.appendChild(tbody);
-      tableWrap.innerHTML = "";
-      tableWrap.appendChild(table);
-    }
-
-    function setMsg(text, type){
-      msgEl.textContent = text;
-      msgEl.classList.remove("danger","ok");
-      if (type) msgEl.classList.add(type);
-    }
-
-    function updateSendEnabled(){
-      const hasRound = !!roundEl.value;
-      const hasToken = !!turnstileToken;
-      sendBtn.disabled = !(hasRound && hasToken);
-    }
-
-    // Turnstile callbacks（グローバルに必要）
-    window.onTurnstileSuccess = function(token){
-      turnstileToken = token || "";
-      updateSendEnabled();
-    };
-    window.onTurnstileExpired = function(){
-      turnstileToken = "";
-      updateSendEnabled();
-    };
-
-    async function send(){
-      setMsg("", "");
-
-      if (!roundEl.value){
-        setMsg("何次応募か選んでください。", "danger");
-        return;
-      }
-      if (!turnstileToken){
-        setMsg("認証（Turnstile）が完了していません。", "danger");
-        return;
-      }
-
-      sendBtn.disabled = true;
-      setMsg("送信中…", "");
-
-      // 入力と落選チェックを収集
-      const inputs = Array.from(document.querySelectorAll('input[type="number"][data-date]'));
-      const rejChecks = Array.from(document.querySelectorAll('input[type="checkbox"][data-rej="1"]'));
-
-      const rejectedDates = new Set(
-        rejChecks.filter(c => c.checked).map(c => c.dataset.date)
-      );
-
-      // 36枠を必ず作る（未入力は0）
-      const entries = [];
-      for (const date of DATES){
-        for (const slot of SLOTS){
-          const input = inputs.find(x => x.dataset.date === date && x.dataset.slot === String(slot));
-          const val = (input && input.value !== "") ? Number(input.value) : 0;
-
-          entries.push({
-            date,
-            slot,
-            // GASはappliedCount/hasRejectionに保存するが、フロントは count/rejected でOK
-            count: Number.isFinite(val) ? Math.max(0, Math.floor(val)) : 0,
-            rejected: rejectedDates.has(date)
-          });
-        }
-      }
-
-      const payload = {
-        action: "submit",          // ★URLクエリ不要のためここで指定
-        round: roundEl.value,
-        entries,
-        turnstileToken,
-        userAgent: navigator.userAgent // rawに保存（任意だけど入れておく）
-      };
-
-      try{
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json().catch(() => null);
-
-        if (!data || data.ok !== true){
-          const detail = data ? JSON.stringify(data) : "";
-          setMsg("送信に失敗しました。" + (detail ? `（${detail}）` : ""), "danger");
-          sendBtn.disabled = false;
-          return;
-        }
-
-        setMsg("送信完了しました。ありがとうございます！", "ok");
-
-        // tokenは使い捨ての場合があるので安全側で無効化
-        turnstileToken = "";
-        updateSendEnabled();
-
-      }catch(e){
-        setMsg("送信に失敗しました（通信エラー）。", "danger");
-        sendBtn.disabled = false;
-      }
-    }
-
-    // init
-    initRounds();
-    buildTable();
-    roundEl.addEventListener("change", updateSendEnabled);
-    sendBtn.addEventListener("click", send);
-    updateSendEnabled();
-  </script>
+  <script type="module" src="./assets/report.js"></script>
 </body>
 </html>
