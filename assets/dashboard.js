@@ -15,34 +15,59 @@ function setMsg(type, text){
 
 /**
  * intensity(0〜100) → 背景色（緑ベース）
- * - 0: 白
- * - >0: 最大値に対する相対濃淡（GAS側で0〜100に正規化済み）
+ * 0は白
  */
 function heatStyleFromIntensity(p){
   const v = Number(p);
-  if (!Number.isFinite(v) || v <= 0) {
-    return "background:#ffffff;";
-  }
+  if (!Number.isFinite(v) || v <= 0) return "background:#ffffff;";
 
-  // 0〜100 → 見える範囲のalphaへ（薄すぎ問題を防ぐ）
-  // 例：1でもうっすら分かり、100でしっかり濃い
+  // 薄すぎ回避：最低でも少し色が付く
   const alpha = 0.12 + (v / 100) * 0.82; // 0.12〜0.94
 
-  // パールグリーン寄り（好みで微調整OK）
-  // ※色は緑ベースで、濃淡はalphaで表現
+  // パールグリーン寄り（緑ベース）
   const r = 90, g = 170, b = 140;
-
   return `background: rgba(${r}, ${g}, ${b}, ${alpha});`;
 }
 
-function renderHeatmap(summary){
-  // intensity方式に対応：bucketsは使わない
-  const { dates, slots, intensity, rejection } = summary;
+/**
+ * summary の形を吸収して「必ず intensity(6x6)」を返す
+ * - summary.intensity があればそれを使う（ただし欠けても落ちない）
+ * - なければ summary.buckets(0〜4) を 0/25/50/75/100 に変換して使う
+ */
+function normalizeIntensity_(summary){
+  const dates = summary?.dates || CONFIG.DATES;
+  const slots = summary?.slots || CONFIG.SLOTS;
 
-  // 互換：まだbucketsしか返ってこない場合はエラーにする（気づきやすくする）
-  if (!Array.isArray(intensity)) {
-    throw new Error("summary.intensity が見つかりません（GASのGETを intensity 返却に変更してください）");
+  // 1) intensity がある場合（ただし壊れてても落ちないように補完）
+  if (Array.isArray(summary?.intensity)) {
+    const src = summary.intensity;
+    return dates.map((_, i) =>
+      slots.map((__, j) => Number(src?.[i]?.[j] ?? 0))
+    );
   }
+
+  // 2) buckets しかない場合は変換
+  if (Array.isArray(summary?.buckets)) {
+    const src = summary.buckets;
+    const map = [0, 25, 50, 75, 100];
+    return dates.map((_, i) =>
+      slots.map((__, j) => {
+        const b = Number(src?.[i]?.[j] ?? 0);
+        return map[Math.max(0, Math.min(4, b))];
+      })
+    );
+  }
+
+  // 3) どっちも無い場合は全部0
+  return dates.map(() => slots.map(() => 0));
+}
+
+function renderHeatmap(summary){
+  const dates = summary?.dates || CONFIG.DATES;
+  const slots = summary?.slots || CONFIG.SLOTS;
+  const rejection = summary?.rejection || dates.map(() => slots.map(() => false));
+
+  const intensity = normalizeIntensity_(summary);
 
   let html = `<table class="heatmap"><thead><tr><th></th>`;
   for (const s of slots) html += `<th>第${s}部</th>`;
@@ -51,15 +76,15 @@ function renderHeatmap(summary){
   for (let i=0;i<dates.length;i++){
     html += `<tr><th style="text-align:left; padding-right:6px;">${formatJPDate(dates[i])}</th>`;
     for (let j=0;j<slots.length;j++){
-      const p = intensity[i][j];          // 0〜100
-      const hasRej = !!rejection[i][j];
+      const p = Number(intensity?.[i]?.[j] ?? 0);
+      const hasRej = !!(rejection?.[i]?.[j]);
       const style = heatStyleFromIntensity(p);
 
       html += `
         <td>
           <div class="cell" style="${style}">
             ${hasRej ? `<div class="rejDot" title="落選報告あり"></div>` : ``}
-            <div class="tag">${p && p > 0 ? "" : ""}</div>
+            <div class="tag"></div>
           </div>
         </td>
       `;
@@ -68,14 +93,21 @@ function renderHeatmap(summary){
   }
   html += `</tbody></table>`;
   mapWrap.innerHTML = html;
+
+  // デバッグ表示（必要なら後で消してOK）
+  const mode = Array.isArray(summary?.intensity) ? "intensity" : (Array.isArray(summary?.buckets) ? "buckets→intensity変換" : "none");
+  updated.textContent = `更新: ${summary.updatedAt || "-"} / mode: ${mode}`;
 }
 
 function renderRejectionList(summary){
-  const { dates, slots, rejection } = summary;
+  const dates = summary?.dates || CONFIG.DATES;
+  const slots = summary?.slots || CONFIG.SLOTS;
+  const rejection = summary?.rejection || dates.map(() => slots.map(() => false));
+
   const items = [];
   for (let i=0;i<dates.length;i++){
     for (let j=0;j<slots.length;j++){
-      if (rejection[i][j]) items.push(`${formatJPDate(dates[i])} 第${slots[j]}部`);
+      if (rejection?.[i]?.[j]) items.push(`${formatJPDate(dates[i])} 第${slots[j]}部`);
     }
   }
   rejList.textContent = items.length ? items.join(" / ") : "（まだありません）";
@@ -117,7 +149,6 @@ async function load(){
     renderHeatmap(summary);
     renderRejectionList(summary);
 
-    updated.textContent = `更新: ${summary.updatedAt || "-"}`;
     setMsg("success", "表示しました。");
   }catch(err){
     setMsg("error", `読み込みに失敗：${err.message || err}`);
