@@ -168,3 +168,21 @@ a{color:inherit; text-decoration:none;}
 .check input{transform:scale(1.2);}
 .mono{font-family: ui-monospace, SFMono-Regular, Menlo, monospace;}
 
+/* 落選マーク：★ */
+.rejStar{
+  position:absolute;
+  top:8px;
+  left:10px;
+  font-size:18px;
+  line-height:1;
+  font-weight:900;
+  color:#111827;            /* 黒っぽく */
+  text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  pointer-events:none;
+}
+
+/* cellがrelativeじゃない場合に備えて */
+.cell{
+  position: relative;
+}
+
