@@ -1,1 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!--
+    【このページの役割】
+    - 最初にアクセスした人に「報告する」「集計を見る」を選んでもらう入口ページ
+    - ここでは API も Turnstile も使いません（ただのリンク集）
+  -->
+  <title>14th ミーグリ応募集計（幸阪茉里乃）</title>
+
+  <style>
+    /* 見た目は最低限。後から好きに変えてOK */
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; }
+    .card { max-width: 720px; margin: 0 auto; padding: 18px; border: 1px solid #ddd; border-radius: 12px; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    p { margin: 0 0 18px; color: #444; line-height: 1.5; }
+    .btns { display: grid; gap: 12px; }
+    a.btn {
+      display: block; text-decoration: none; text-align: center;
+      padding: 14px 12px; border-radius: 10px; border: 1px solid #222;
+      color: #fff; background: #111; font-weight: 700;
+    }
+    a.btn.secondary { background: #fff; color: #111; border-color: #bbb; }
+    .note { font-size: 12px; color: #666; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>14th ミーグリ応募集計（幸阪茉里乃）</h1>
+
+    <p>
+      匿名で応募枚数を報告して、合算の「熱量（濃淡）」をみんなで確認するページです。<br/>
+      ※具体的な数値は公開しません。
+    </p>
+
+    <!--
+      【2つの導線】
+      - report.html：応募枚数の入力と送信
+      - dashboard.html：集計の閲覧（濃淡のみ）
+    -->
+    <div class="btns">
+      <a class="btn" href="./report.html">応募枚数を報告する</a>
+      <a class="btn secondary" href="./dashboard.html">集計を確認する</a>
+    </div>
+
+    <div class="note">
+      送信時にボット対策（Turnstile）が入りますが、基本的に操作はほぼ不要です。
+    </div>
+  </div>
+</body>
+</html>
