@@ -1,6 +1,6 @@
 export const CONFIG = {
-  GAS_URL: "<<<YOUR_GAS_WEBAPP_URL>>>",  // ここだけ差し替え
-  TURNSTILE_SITEKEY: "<<<YOUR_TURNSTILE_SITEKEY>>>", // ここだけ差し替え
+  GAS_URL: "https://script.google.com/macros/s/AKfycbzIxirtGo1W-p3P0OjlS87l-EDDyXpySb65eDVP9VOj1dhhT6b72c260zt430KGihxs9w/exec",  // ここだけ差し替え
+  TURNSTILE_SITEKEY: "0x4AAAAAACXGSWcz_G9TQ_K4", // ここだけ差し替え
   DATES: [
     "2026-03-15",
     "2026-03-29",
