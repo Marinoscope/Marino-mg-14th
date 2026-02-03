@@ -39,7 +39,7 @@
     .grid{ overflow:auto; border-radius:16px; margin-top:10px; }
     table{
       border-collapse:collapse;
-      min-width:860px; /* スマホは横スクロール前提 */
+      min-width:860px;
       width:100%;
       background:rgba(255,255,255,.96);
     }
@@ -56,13 +56,11 @@
       font-weight:900;
       white-space:nowrap;
     }
-
     .cell{
       height:34px;
       border-radius:10px;
       border:1px solid rgba(0,0,0,.08);
     }
-
     ul{ margin:8px 0 0 18px; }
     .small{ font-size:12px; color:var(--muted); margin-top:6px; }
   </style>
@@ -89,7 +87,7 @@
   </div>
 
   <script>
-    // ★これだけが唯一のGAS URL（クエリは使わない）
+    // ★固定：あなたのWebアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
 
     // 0..1 をグレー濃淡に変換（数値は出さない）
@@ -193,6 +191,7 @@
         status.textContent = "表示中";
         renderTable(data.dates, data.intensity);
         renderRej(data.rejectionByDate || []);
+
         if (data.updatedAt) {
           updated.textContent = `更新: ${new Date(data.updatedAt).toLocaleString("ja-JP")}`;
         } else {
