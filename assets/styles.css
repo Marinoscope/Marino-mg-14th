@@ -185,4 +185,28 @@ a{color:inherit; text-decoration:none;}
 .cell{
   position: relative;
 }
+/* report ⇄ dashboard ナビ */
+.topNav{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin: 6px 0 14px;
+}
+
+.navBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  text-decoration: none;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #ffffff;
+  color: #111827;
+}
+
+.navBtn:hover{
+  filter: brightness(0.98);
+}
 
