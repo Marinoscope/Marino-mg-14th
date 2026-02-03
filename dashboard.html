@@ -1,1 +1,233 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!--
+    【このページの役割】
+    - GAS の GET ?action=summary を呼び出して集計結果を取得する
+    - 具体的な応募数は表示しない（濃淡のみ）
+    - 落選報告は「日付ごとに○件あり」を表の外に表示する
+  -->
+  <title>集計を確認する</title>
+
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 18px; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    h1 { font-size: 18px; margin: 10px 0 12px; }
+    .hint { font-size: 12px; color:#666; line-height:1.5; }
+    .card { border:1px solid #ddd; border-radius:12px; padding:14px; margin-top: 12px; }
+    .grid { overflow:auto; }
+    table { border-collapse: collapse; min-width: 840px; }
+    th, td { border:1px solid #ddd; padding: 10px; text-align:center; }
+    th { background:#f6f6f6; position: sticky; top: 0; z-index: 1; }
+    td:first-child { background:#fafafa; position: sticky; left:0; z-index: 1; text-align:left; }
+    .legend { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .box { width:18px; height:18px; border:1px solid #ccc; border-radius:4px; }
+    .meta { font-size:12px; color:#666; margin-top:8px; }
+    ul { margin: 8px 0 0 18px; }
+    .warn { font-weight: 800; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <a href="./index.html">← 戻る</a>
+      <a href="./report.html">報告する →</a>
+    </div>
+
+    <h1>合算の集計（濃淡のみ）</h1>
+
+    <div class="hint">
+      応募枚数の<strong>具体的な数値は公開しません</strong>。濃いほど相対的に応募が多い枠です。<br/>
+      落選は「その日程で落選報告があったか」を表の外にサマリー表示します。
+    </div>
+
+    <div class="card">
+      <!-- ここにヒートマップの表を描画 -->
+      <div class="grid" id="grid"></div>
+
+      <!-- 右下に「薄い〜濃い」の凡例 -->
+      <div class="legend" id="legend"></div>
+
+      <!-- 集計生成時刻（GAS側） -->
+      <div class="meta" id="meta"></div>
+    </div>
+
+    <div class="card">
+      <div class="warn">落選サマリー（完売の可能性が高い日程）</div>
+      <div class="hint">
+        ※「一部落選を含む落選あり」チェックの報告件数です（部の内訳・具体数は出しません）。
+      </div>
+      <div id="rej"></div>
+    </div>
+  </div>
+
+  <script>
+    /******************************************************************
+     * 【設定ここだけ変える】
+     * - GAS_URL：Apps Script の WebアプリURL（.../exec）
+     ******************************************************************/
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
+
+    // 列見出し（第1部〜第6部）
+    const SLOT_LABELS = ["第1部","第2部","第3部","第4部","第5部","第6部"];
+
+    /******************************************************************
+     * メイン処理：GASから summary を取得して描画
+     ******************************************************************/
+    async function main() {
+      // cache:no-store で更新されやすくする（状況により効きが変わります）
+      const res = await fetch(`${GAS_URL}?action=summary`, { cache: "no-store" });
+      const data = await res.json();
+
+      if (!data.ok) {
+        document.getElementById("grid").textContent = "読み込みに失敗しました。";
+        return;
+      }
+
+      renderHeatmap(data);
+      renderRejectionSummary(data);
+      renderMeta(data);
+    }
+
+    /******************************************************************
+     * ヒートマップ（濃淡）の表を描画
+     * - data.intensity は 0..1 の値
+     * - 具体的な応募数は表示しない
+     ******************************************************************/
+    function renderHeatmap(data) {
+      const dates = data.dates || [];
+      const intensity = data.intensity || [];
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+
+      const th0 = document.createElement("th");
+      th0.textContent = "日程";
+      trh.appendChild(th0);
+
+      for (const s of SLOT_LABELS) {
+        const th = document.createElement("th");
+        th.textContent = s;
+        trh.appendChild(th);
+      }
+
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      for (let r = 0; r < dates.length; r++) {
+        const tr = document.createElement("tr");
+
+        const tdDate = document.createElement("td");
+        tdDate.textContent = formatDateJP(dates[r]);
+        tr.appendChild(tdDate);
+
+        // 6部ぶん描画
+        for (let c = 0; c < 6; c++) {
+          const td = document.createElement("td");
+          const v = (intensity[r] && typeof intensity[r][c] === "number") ? intensity[r][c] : 0;
+
+          // グレースケール：薄い=白、濃い=暗い
+          // （色は好みで後から変えてOK）
+          const shade = Math.round(255 - (v * 180)); // 255..75くらい
+          td.style.backgroundColor = `rgb(${shade},${shade},${shade})`;
+
+          tr.appendChild(td);
+        }
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+      grid.appendChild(table);
+
+      // 凡例を作る
+      const legend = document.getElementById("legend");
+      legend.innerHTML = "";
+
+      const items = [
+        { label: "薄い（相対的に少ない）", v: 0.0 },
+        { label: "中", v: 0.5 },
+        { label: "濃い（相対的に多い）", v: 1.0 },
+      ];
+
+      for (const it of items) {
+        const wrap = document.createElement("div");
+        wrap.style.display = "flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "8px";
+
+        const box = document.createElement("div");
+        box.className = "box";
+        const shade = Math.round(255 - (it.v * 180));
+        box.style.backgroundColor = `rgb(${shade},${shade},${shade})`;
+
+        const text = document.createElement("div");
+        text.style.fontSize = "12px";
+        text.style.color = "#444";
+        text.textContent = it.label;
+
+        wrap.appendChild(box);
+        wrap.appendChild(text);
+        legend.appendChild(wrap);
+      }
+    }
+
+    /******************************************************************
+     * 落選サマリーを表示
+     * - data.rejectionByDate は [{date:"YYYY-MM-DD", reports:数字}, ...]
+     * - 「表の外」に日付ごとに表示する（あなたの要望）
+     ******************************************************************/
+    function renderRejectionSummary(data) {
+      const list = data.rejectionByDate || [];
+      const rej = document.getElementById("rej");
+
+      if (!list.length) {
+        rej.textContent = "現在、落選報告はありません。";
+        return;
+      }
+
+      const sorted = [...list].sort((a,b) => String(a.date).localeCompare(String(b.date)));
+
+      const ul = document.createElement("ul");
+      for (const item of sorted) {
+        const li = document.createElement("li");
+        li.textContent = `${formatDateJP(item.date)}：落選報告 ${item.reports}件あり`;
+        ul.appendChild(li);
+      }
+
+      rej.innerHTML = "";
+      rej.appendChild(ul);
+    }
+
+    /******************************************************************
+     * 最終更新時刻（GASが集計を生成した時刻）を表示
+     ******************************************************************/
+    function renderMeta(data) {
+      const meta = document.getElementById("meta");
+      meta.textContent = `最終更新（集計生成時刻）：${new Date(data.updatedAt).toLocaleString("ja-JP")}`;
+    }
+
+    /******************************************************************
+     * "YYYY-MM-DD" → "M月D日" に変換
+     ******************************************************************/
+    function formatDateJP(iso) {
+      const [y,m,d] = String(iso).split("-").map(Number);
+      if (!y || !m || !d) return String(iso);
+      return `${m}月${d}日`;
+    }
+
+    // ページ読み込み時に実行
+    main();
+  </script>
+</body>
+</html>
