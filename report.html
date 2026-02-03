@@ -10,8 +10,7 @@
       --bg:#EAF6F2; --text:#1C2B2A; --muted:#4A6663;
       --border:#D7E7E2; --shadow:0 10px 28px rgba(24,74,67,.10);
       --radius:18px;
-      --pink:#F6B7C6; --green:#2F7D73;
-      --danger:#B00020;
+      --green:#2F7D73; --danger:#B00020;
     }
     *{ box-sizing:border-box; }
     body{
@@ -53,7 +52,7 @@
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
     .tableWrap{ overflow:auto; border-radius:16px; margin-top:12px; }
-    table{ border-collapse:collapse; min-width:860px; width:100%; background:rgba(255,255,255,.96); }
+    table{ border-collapse:collapse; min-width:920px; width:100%; background:rgba(255,255,255,.96); }
     th,td{ border:1px solid rgba(0,0,0,.06); padding:10px; text-align:center; }
     th{
       position:sticky; top:0; z-index:2;
@@ -103,21 +102,18 @@
       <h1>応募枚数の報告</h1>
       <div class="hint">
         何次応募の報告か選び、各日程×各部の応募枚数を入力してください。<br>
-        未入力は <b>0</b> として扱われます。落選があった枠はチェックしてください（枚数は不要）。
+        未入力は <b>0</b> として扱われます。落選があった日程はチェックしてください（枚数は不要）。
       </div>
 
       <div class="row">
         <select id="round">
-          <!-- 1〜15次固定（必要なら増やせます） -->
           <option value="">何次応募？（必須）</option>
         </select>
-
         <button id="sendBtn" disabled>送信</button>
       </div>
 
       <div class="tableWrap" id="tableWrap"></div>
 
-      <!-- Turnstile（左下に出るかは環境によります。出てもOK） -->
       <div class="tsWrap">
         <div class="cf-turnstile"
              data-sitekey="0x4AAAAAACXGSWcz_G9TQ_K4"
@@ -131,7 +127,7 @@
   </div>
 
   <script>
-    // ★これだけが唯一のGAS URL（クエリは使わない）
+    // ★固定：あなたのWebアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzYwQKukRGZXb6yXrZhULmHdwvX2bmFs6Ka6UkJE52zoR27zWU1wxZaNXmqC3VFlQQY/exec";
 
     const DATES = [
@@ -173,7 +169,6 @@
     function buildTable(){
       const table = document.createElement("table");
 
-      // head
       const thead = document.createElement("thead");
       const trh = document.createElement("tr");
 
@@ -186,7 +181,7 @@
         th.textContent = `第${s}部`;
         trh.appendChild(th);
       }
-      // 落選列
+
       const thR = document.createElement("th");
       thR.textContent = "落選あり";
       trh.appendChild(thR);
@@ -194,7 +189,6 @@
       thead.appendChild(trh);
       table.appendChild(thead);
 
-      // body
       const tbody = document.createElement("tbody");
 
       for (const date of DATES){
@@ -215,12 +209,11 @@
           input.dataset.date = date;
           input.dataset.slot = String(slot);
 
-          // 未入力は0扱い（送信時に吸収）
           td.appendChild(input);
           tr.appendChild(td);
         }
 
-        // 落選チェック（「この日程で落選報告あり」扱いでOK）
+        // 落選は日程単位でOK（要件どおり）
         const tdRej = document.createElement("td");
         const chk = document.createElement("input");
         chk.type = "checkbox";
@@ -275,7 +268,7 @@
       sendBtn.disabled = true;
       setMsg("送信中…", "");
 
-      // entries生成（36枠）
+      // 入力と落選チェックを収集
       const inputs = Array.from(document.querySelectorAll('input[type="number"][data-date]'));
       const rejChecks = Array.from(document.querySelectorAll('input[type="checkbox"][data-rej="1"]'));
 
@@ -283,27 +276,29 @@
         rejChecks.filter(c => c.checked).map(c => c.dataset.date)
       );
 
+      // 36枠を必ず作る（未入力は0）
       const entries = [];
       for (const date of DATES){
         for (const slot of SLOTS){
           const input = inputs.find(x => x.dataset.date === date && x.dataset.slot === String(slot));
-          const val = input && input.value !== "" ? Number(input.value) : 0;
+          const val = (input && input.value !== "") ? Number(input.value) : 0;
 
           entries.push({
             date,
             slot,
+            // GASはappliedCount/hasRejectionに保存するが、フロントは count/rejected でOK
             count: Number.isFinite(val) ? Math.max(0, Math.floor(val)) : 0,
-            // 「落選あり」は日程単位でOK（要件どおり）
             rejected: rejectedDates.has(date)
           });
         }
       }
 
       const payload = {
-        action: "submit",              // ★クエリ不要のためここに持たせる
+        action: "submit",          // ★URLクエリ不要のためここで指定
         round: roundEl.value,
         entries,
-        turnstileToken
+        turnstileToken,
+        userAgent: navigator.userAgent // rawに保存（任意だけど入れておく）
       };
 
       try{
@@ -316,9 +311,9 @@
         const data = await res.json().catch(() => null);
 
         if (!data || data.ok !== true){
-          const detail = data && (data.error || data.detail) ? JSON.stringify(data) : "";
+          const detail = data ? JSON.stringify(data) : "";
           setMsg("送信に失敗しました。" + (detail ? `（${detail}）` : ""), "danger");
-          sendBtn.disabled = false; // 再送できるように
+          sendBtn.disabled = false;
           return;
         }
 
