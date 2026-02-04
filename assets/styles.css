@@ -210,219 +210,70 @@ a{color:inherit; text-decoration:none;}
   filter: brightness(0.98);
 }
 
-/* =========================================
-   Theme: Sakura Pink × Pearl Green (append)
-   既存CSSを壊さず、見た目だけ底上げする上書き
-   ========================================= */
+/* ===============================
+   Polish pack (safe)
+   =============================== */
 
-/* 1) 色・影・角丸の設計（全体の基調） */
-:root{
-  --pink: #f3a7c2;          /* さくらピンク */
-  --pink-deep: #ea7fa8;
-  --green: #6fb69a;         /* パールグリーン */
-  --green-deep: #5aa48b;
-
-  --bg: #fbfbfd;
-  --card: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --line: rgba(17,24,39,0.10);
-
-  --shadow: 0 10px 30px rgba(17,24,39,0.08);
-  --shadow-soft: 0 6px 18px rgba(17,24,39,0.07);
-  --r-lg: 18px;
-  --r-md: 14px;
-}
-
-/* 2) 背景（ほんのりピンク×グリーンの霞） */
-html, body{
+/* 背景：単なるグラデより、霞っぽくして高級感 */
+body{
   background:
-    radial-gradient(900px 600px at 10% 0%, rgba(243,167,194,0.22), rgba(255,255,255,0) 60%),
-    radial-gradient(900px 600px at 90% 0%, rgba(111,182,154,0.20), rgba(255,255,255,0) 60%),
-    var(--bg);
-  color: var(--text);
+    radial-gradient(900px 560px at 12% 0%, rgba(248,180,196,.22), rgba(255,255,255,0) 60%),
+    radial-gradient(900px 560px at 88% 0%, rgba(183,228,215,.22), rgba(255,255,255,0) 60%),
+    linear-gradient(180deg, #fff, var(--bg));
 }
 
-/* 3) コンテナ／カードっぽさ（既存のwrap系に効かせる） */
-.container, main, .wrap, .page, .card, .panel{
-  border-radius: var(--r-lg);
+/* 見出しの揃い（カード内の見出しがキリッとする） */
+.card h2{
+  letter-spacing: .02em;
+  line-height: 1.2;
 }
 
-/* よくある「白い枠」系をカード化（クラス名が違っても効くよう広めに） */
-section, .box, .panel, .card, .content, .paper{
-  background: var(--card);
+/* indexのカード：押せる感（hover） */
+.grid2 a.card{
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.grid2 a.card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(0,0,0,.08);
+  filter: brightness(1.01);
 }
 
-/* 4) 見出し・文字 */
-h1, h2, h3{
-  letter-spacing: 0.02em;
+/* ボタン：primaryの文字色が透ける事故を防ぐ */
+.btn.primary{
+  color: #111827;
 }
 
-h1{
-  font-size: 22px;
-  margin-bottom: 10px;
-}
-
-h2{
-  font-size: 16px;
-  margin: 18px 0 10px;
-}
-
-small, .muted, .help, .desc{
-  color: var(--muted);
-}
-
-/* 5) 共通カード（dashboardの外枠とか） */
-.cardlike, .panel, .box, .paper, .content{
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-}
-
-/* 6) ナビボタン（report⇄dashboard）をテーマ色に */
-.topNav{
-  display:flex;
-  justify-content:flex-end;
-  gap:12px;
-  margin: 8px 0 16px;
-}
-
+/* ナビボタン（report⇄dashboard）を“サイトの主役”に */
+.topNav{ margin: 10px 0 16px; }
 .navBtn{
-  appearance:none;
-  border:none;
-  border-radius: 999px;
-  padding: 10px 18px;
+  border: none;
+  color: #111827;
+  background: linear-gradient(90deg, rgba(183,228,215,.95), rgba(248,180,196,.95));
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
   font-weight: 900;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: none;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--green), var(--green-deep));
-  box-shadow: 0 8px 18px rgba(90,164,139,0.25);
-  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
 .navBtn:hover{
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(90,164,139,0.28);
-}
-.navBtn:active{
-  transform: translateY(0);
-}
-
-/* ピンク版ボタンが欲しいとき用（任意で使える） */
-.navBtn.pink{
-  background: linear-gradient(135deg, var(--pink), var(--pink-deep));
-  box-shadow: 0 8px 18px rgba(234,127,168,0.25);
-}
-.navBtn.pink:hover{
-  box-shadow: 0 12px 26px rgba(234,127,168,0.28);
-}
-
-/* 7) メッセージ（success/error/notice）の見た目 */
-.notice, .success, .error{
-  border-radius: var(--r-md);
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-soft);
-}
-
-.notice{
-  background: rgba(243,167,194,0.12);
-  border-color: rgba(243,167,194,0.35);
-}
-
-.success{
-  background: rgba(111,182,154,0.12);
-  border-color: rgba(111,182,154,0.35);
-}
-
-.error{
-  background: rgba(239,68,68,0.10);
-  border-color: rgba(239,68,68,0.25);
-}
-
-/* 8) ヒートマップ：全体を丸く、余白を柔らかく */
-table.heatmap{
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 10px 10px;
-}
-
-table.heatmap th{
-  font-weight: 800;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.cell{
-  border-radius: 14px;
-  border: 1px solid rgba(17,24,39,0.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
-  min-height: 42px;
-}
-
-/* 9) 落選マーク（★）を可愛く */
-.rejStar{
-  position:absolute;
-  top:8px;
-  left:10px;
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--pink-deep);
-  text-shadow: 0 1px 0 rgba(255,255,255,0.85);
-  pointer-events:none;
-}
-
-/* 10) 入力フォーム（もしinputが素朴なら整える） */
-input[type="text"], input[type="number"], select{
-  border-radius: 12px;
-  border: 1px solid rgba(17,24,39,0.12);
-  padding: 10px 12px;
-  outline: none;
-  background: #fff;
-}
-
-input[type="text"]:focus, input[type="number"]:focus, select:focus{
-  border-color: rgba(111,182,154,0.60);
-  box-shadow: 0 0 0 4px rgba(111,182,154,0.18);
-}
-
-/* 11) ボタンっぽい要素があれば（既存btnクラスがある場合に馴染ませる） */
-button, .btn{
-  border-radius: 999px;
-  font-weight: 900;
-}
-
-button{
-  border: none;
-  padding: 10px 16px;
-  cursor: pointer;
-  background: linear-gradient(135deg, var(--pink), var(--pink-deep));
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(234,127,168,0.22);
-  transition: transform .12s ease, filter .12s ease;
-}
-
-button:hover{
   filter: brightness(1.03);
   transform: translateY(-1px);
 }
 
-button:active{
-  transform: translateY(0);
+/* ステップ番号：少し大きく、押しやすく */
+.step .n{
+  width: 30px;
+  height: 30px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.08);
 }
 
-/* 12) スマホで窮屈にならないよう調整 */
-@media (max-width: 760px){
-  table.heatmap{
-    border-spacing: 8px 8px;
-  }
-  .cell{
-    min-height: 38px;
-  }
-  .navBtn{
-    padding: 10px 14px;
-    font-size: 13px;
-  }
+/* ヒートマップ：表感を減らす（余白＋セルの質感） */
+.heatmap{ border-spacing: 10px; }
+.cell{
+  border: 1px solid rgba(31,41,55,.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
 }
 
+/* 落選★：さくらピンクで可愛く、でも読みやすく */
+.rejStar{
+  color: rgba(248,180,196,1);
+  text-shadow: 0 1px 0 rgba(255,255,255,.85);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.08));
+}
