@@ -332,14 +332,12 @@ body{
 
 /* 公式応募カード */
 .officialCard{
-  border: 1.5px solid rgba(183,228,215,.7);
+  border: 1.5px solid rgba(183,228,215,.6);
   background: linear-gradient(
     135deg,
-    rgba(183,228,215,.18),
-    rgba(248,180,196,.18)
+    rgba(183,228,215,.15),
+    rgba(248,180,196,.15)
   );
-  box-shadow: 0 12px 28px rgba(0,0,0,.06);
-  transition: transform .12s ease, box-shadow .12s ease;
 }
 
 .officialCard:hover{
