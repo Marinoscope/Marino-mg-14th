@@ -329,3 +329,21 @@ body{
     align-items: center;
   }
 }
+
+/* 公式応募カード */
+.officialCard{
+  border: 1.5px solid rgba(183,228,215,.7);
+  background: linear-gradient(
+    135deg,
+    rgba(183,228,215,.18),
+    rgba(248,180,196,.18)
+  );
+  box-shadow: 0 12px 28px rgba(0,0,0,.06);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.officialCard:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(0,0,0,.10);
+}
+
